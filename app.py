@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestRegressor
 # =========================
 movies = pd.read_csv("tmdb_5000_movies.csv")
 
-movies = movies[['genres', 'release_date', 'vote_average']]
+movies = movies[['title', 'genres', 'release_date', 'vote_average']]
 movies.dropna(inplace=True)
 
 # =========================
@@ -51,12 +51,35 @@ model = RandomForestRegressor()
 model.fit(X, y)
 
 # =========================
-# 🌐 STREAMLIT UI
+# 🌐 NETFLIX STYLE UI
 # =========================
-st.set_page_config(page_title="Movie Rating Predictor", layout="centered")
+st.set_page_config(page_title="Movie Predictor", layout="wide")
 
-st.title("🎬 Movie Rating Prediction App")
-st.write("Predict movie rating using Genre + Year")
+st.markdown("""
+<style>
+body {background-color: #0e1117; color: white;}
+.card {
+    background-color: #141414;
+    padding: 10px;
+    border-radius: 10px;
+    transition: transform 0.3s;
+    text-align: center;
+}
+.card:hover {
+    transform: scale(1.05);
+}
+.title {
+    font-size: 16px;
+    font-weight: bold;
+}
+.rating {
+    color: #f5c518;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🎬 Netflix Style Movie Predictor")
+st.write("Find movies based on Genre & Year")
 
 # =========================
 # 🎯 USER INPUT
@@ -64,23 +87,52 @@ st.write("Predict movie rating using Genre + Year")
 all_genres = sorted(set(" ".join(movies['genres']).split()))
 
 selected_genres = st.multiselect("Select Genre(s)", all_genres)
-
-year = st.slider("Select Year", 1980, 2025, 2020)
+year = st.slider("Select Year", 1980, 2020, 2015)
 
 # =========================
-# 🔮 PREDICTION
+# 🔮 PREDICTION + FILTER
 # =========================
-if st.button("Predict Rating"):
+if st.button("Show Movies"):
     if not selected_genres:
         st.warning("Please select at least one genre")
     else:
         input_genre = " ".join(selected_genres)
         genre_vec = cv.transform([input_genre]).toarray()
-
         year_vec = np.array([[year]])
 
         input_data = np.concatenate((genre_vec, year_vec), axis=1)
 
-        prediction = model.predict(input_data)[0]
+        # Predict base rating
+        predicted_rating = model.predict(input_data)[0]
 
-        st.success(f"⭐ Predicted Rating: {round(prediction, 2)}")
+        # Filter movies (same genre + nearby year)
+        filtered = movies[
+            (movies['genres'].str.contains(selected_genres[0], case=False)) &
+            (abs(movies['year'] - year) <= 3)
+        ]
+
+        filtered = filtered.copy()
+
+        # Predict rating for filtered movies
+        genre_vec_all = cv.transform(filtered['genres']).toarray()
+        year_vec_all = filtered['year'].values.reshape(-1,1)
+        X_all = np.concatenate((genre_vec_all, year_vec_all), axis=1)
+
+        filtered['predicted_rating'] = model.predict(X_all)
+
+        # Top movies
+        top_movies = filtered.sort_values(by='predicted_rating', ascending=False).head(10)
+
+        st.subheader("🔥 Recommended Movies")
+
+        cols = st.columns(5)
+
+        for i, row in top_movies.iterrows():
+            with cols[i % 5]:
+                st.markdown(f"""
+                <div class="card">
+                    <div class="title">{row['title']}</div>
+                    <div class="rating">⭐ {round(row['predicted_rating'],2)}</div>
+                    <div>📅 {row['year']}</div>
+                </div>
+                """, unsafe_allow_html=True)

@@ -171,7 +171,7 @@ html, body, [class*="css"] {
 }
 
 .main-title {
-    font-size: 70px;
+    font-size: 75px;
     font-weight: 900;
     color: white;
     margin-bottom: 0px;
@@ -270,6 +270,10 @@ html, body, [class*="css"] {
     width: 230px;
     font-size: 18px;
     font-weight: bold;
+}
+
+.stButton > button:hover {
+    transform: scale(1.02);
 }
 
 </style>

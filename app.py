@@ -1,3 +1,6 @@
+# Final Fixed app.py (Hero UI Bug Fixed + Clean Netflix Layout)
+
+```python
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -15,10 +18,9 @@ st.set_page_config(
 )
 
 # =====================================================
-# LOAD SAVED MODEL + VECTORIZER
+# LOAD MODEL
 # =====================================================
 model = joblib.load("movie_model.pkl")
-
 cv = joblib.load("vectorizer.pkl")
 
 # =====================================================
@@ -53,7 +55,6 @@ def fetch_poster(movie_name):
 # LOAD DATA
 # =====================================================
 movies = pd.read_csv("tmdb_5000_movies.csv")
-
 credits = pd.read_csv("tmdb_5000_credits.csv")
 
 movies = movies.merge(credits, on='title')
@@ -98,15 +99,12 @@ movies['genres'] = movies['genres'].apply(convert)
 def get_cast(obj):
 
     L = []
-
     counter = 0
 
     for i in ast.literal_eval(obj):
 
         if counter != 3:
-
             L.append(i['name'])
-
             counter += 1
 
         else:
@@ -126,9 +124,7 @@ def fetch_director(obj):
     for i in ast.literal_eval(obj):
 
         if i['job'] == 'Director':
-
             L.append(i['name'])
-
             break
 
     return L
@@ -164,12 +160,12 @@ movies['tags'] = movies['tags'].apply(
 )
 
 # =====================================================
-# PREMIUM CSS
+# CSS
 # =====================================================
 st.markdown("""
 <style>
 
-html, body, [class*="css"]  {
+html, body, [class*="css"] {
     background-color: #0b0f1a;
     color: white;
     font-family: 'Poppins', sans-serif;
@@ -177,74 +173,114 @@ html, body, [class*="css"]  {
 
 .block-container {
     padding-top: 1rem;
-    padding-left: 3rem;
-    padding-right: 3rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.main-title {
+    font-size: 75px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 0px;
+}
+
+.subtitle {
+    color: #aaaaaa;
+    font-size: 20px;
+    margin-top: -10px;
+    margin-bottom: 30px;
 }
 
 .hero {
     position: relative;
-    height: 500px;
+    height: 550px;
     border-radius: 25px;
     overflow: hidden;
-    margin-bottom: 40px;
+    margin-top: 30px;
+    margin-bottom: 50px;
+    background-size: cover;
+    background-position: center;
 }
 
-.big-title {
-    font-size: 70px;
-    font-weight: 800;
-    letter-spacing: -2px;
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.95) 25%,
+        rgba(0,0,0,0.3) 70%
+    );
 }
 
-.subtitle {
-    color: #b3b3b3;
-    font-size: 20px;
-    margin-top: -10px;
+.hero-content {
+    position: absolute;
+    bottom: 60px;
+    left: 50px;
+    z-index: 2;
+    width: 45%;
+}
+
+.hero-title {
+    font-size: 60px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 15px;
+}
+
+.hero-rating {
+    color: #e50914;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.hero-desc {
+    color: #dddddd;
+    font-size: 18px;
 }
 
 .section-title {
-    font-size: 30px;
-    font-weight: 700;
-    margin-top: 40px;
+    font-size: 34px;
+    font-weight: 800;
+    margin-top: 20px;
     margin-bottom: 20px;
 }
 
 .movie-card {
     background: #141414;
-    border-radius: 20px;
-    overflow: hidden;
+    padding: 10px;
+    border-radius: 18px;
     transition: 0.4s;
-    cursor: pointer;
     margin-bottom: 20px;
 }
 
 .movie-card:hover {
-    transform: scale(1.06);
+    transform: scale(1.05);
 }
 
 .movie-name {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     margin-top: 10px;
 }
 
 .movie-info {
-    color: #b3b3b3;
+    color: #bbbbbb;
     font-size: 14px;
 }
 
-.stButton>button {
+.stButton > button {
     background: linear-gradient(90deg,#e50914,#ff4d4d);
     color: white;
     border: none;
     border-radius: 12px;
-    height: 50px;
-    width: 220px;
+    height: 55px;
+    width: 230px;
     font-size: 18px;
     font-weight: bold;
 }
 
-.stButton>button:hover {
-    transform: scale(1.03);
+.stButton > button:hover {
+    transform: scale(1.02);
 }
 
 </style>
@@ -254,15 +290,9 @@ html, body, [class*="css"]  {
 # HEADER
 # =====================================================
 st.markdown("""
-<div>
-    <div class='big-title'>NETFLIX AI</div>
-    <div class='subtitle'>
-        AI Powered Movie Recommendation System
-    </div>
-</div>
+<div class='main-title'>NETFLIX AI</div>
+<div class='subtitle'>AI Powered Movie Recommendation System</div>
 """, unsafe_allow_html=True)
-
-st.write("")
 
 # =====================================================
 # INPUTS
@@ -270,9 +300,7 @@ st.write("")
 all_genres = sorted(
     set(
         " ".join(
-            movies['genres'].apply(
-                lambda x:" ".join(x)
-            )
+            movies['genres'].apply(lambda x:" ".join(x))
         ).split()
     )
 )
@@ -280,14 +308,12 @@ all_genres = sorted(
 col1, col2 = st.columns([2,1])
 
 with col1:
-
     selected_genres = st.multiselect(
         "🎭 Select Genre(s)",
         all_genres
     )
 
 with col2:
-
     year = st.slider(
         "📅 Select Year",
         1980,
@@ -295,9 +321,6 @@ with col2:
         2015
     )
 
-# =====================================================
-# SEARCH
-# =====================================================
 search = st.text_input(
     "🔍 Search Movie",
     placeholder="Search movies like Interstellar..."
@@ -309,12 +332,10 @@ search = st.text_input(
 if st.button("🎬 Discover Movies"):
 
     if not selected_genres:
-
         st.warning("Please select at least one genre")
 
     else:
 
-        # FILTER
         filtered = movies[
             (
                 movies['genres'].astype(str).str.contains(
@@ -341,9 +362,7 @@ if st.button("🎬 Discover Movies"):
         )
 
         # PREDICT
-        filtered['predicted_rating'] = model.predict(
-            X_filtered
-        )
+        filtered['predicted_rating'] = model.predict(X_filtered)
 
         # SORT
         top_movies = filtered.sort_values(
@@ -354,50 +373,30 @@ if st.button("🎬 Discover Movies"):
         # HERO
         hero_movie = top_movies.iloc[0]
 
-        hero_poster = fetch_poster(
-            hero_movie['title']
-        )
+        hero_poster = fetch_poster(hero_movie['title'])
 
         st.markdown(
             f"""
-            <div class="hero"
-            style="
-            background-image:
-            linear-gradient(
-            to right,
-            rgba(0,0,0,0.95),
-            rgba(0,0,0,0.2)),
-            url('{hero_poster}');
+            <div class='hero' style="background-image:url('{hero_poster}');">
 
-            background-size: cover;
-            background-position: center;
-            ">
+                <div class='hero-overlay'></div>
 
-            <div style="
-            position:absolute;
-            bottom:60px;
-            left:50px;
-            width:50%;
-            ">
+                <div class='hero-content'>
 
-            <h1 style="
-            font-size:60px;
-            ">
-            {hero_movie['title']}
-            </h1>
+                    <div class='hero-title'>
+                        {hero_movie['title']}
+                    </div>
 
-            <h3 style="color:#e50914;">
-            ⭐ {round(hero_movie['predicted_rating'],2)}
-            </h3>
+                    <div class='hero-rating'>
+                        ⭐ {round(hero_movie['predicted_rating'],2)}
+                    </div>
 
-            <p style="
-            color:#d1d1d1;
-            font-size:18px;
-            ">
-            AI-selected premium recommendation.
-            </p>
+                    <div class='hero-desc'>
+                        AI selected premium recommendation based on your preferences.
+                    </div>
 
-            </div>
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True
@@ -417,10 +416,7 @@ if st.button("🎬 Discover Movies"):
 
                 poster = fetch_poster(row.title)
 
-                st.markdown(
-                    "<div class='movie-card'>",
-                    unsafe_allow_html=True
-                )
+                st.markdown("<div class='movie-card'>", unsafe_allow_html=True)
 
                 st.image(
                     poster,
@@ -442,7 +438,22 @@ if st.button("🎬 Discover Movies"):
                     unsafe_allow_html=True
                 )
 
-                st.markdown(
-                    "</div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown("</div>", unsafe_allow_html=True)
+```
+
+# requirements.txt
+
+```txt
+streamlit
+pandas
+numpy
+scikit-learn
+requests
+joblib
+```
+
+# Run
+
+```bash
+streamlit run app.py
+```

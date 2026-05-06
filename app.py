@@ -153,7 +153,7 @@ def load_data():
 movies = load_data()
 
 # =====================================================
-# PREMIUM CSS
+# CSS
 # =====================================================
 st.markdown("""
 <style>
@@ -161,7 +161,7 @@ st.markdown("""
 html, body, [class*="css"] {
     background-color: #0b0f1a;
     color: white;
-    font-family: 'Poppins', sans-serif;
+    font-family: sans-serif;
 }
 
 .block-container {
@@ -171,7 +171,7 @@ html, body, [class*="css"] {
 }
 
 .main-title {
-    font-size: 75px;
+    font-size: 70px;
     font-weight: 900;
     color: white;
     margin-bottom: 0px;
@@ -184,7 +184,7 @@ html, body, [class*="css"] {
     margin-bottom: 30px;
 }
 
-.hero {
+.hero-container {
     position: relative;
     height: 550px;
     border-radius: 25px;
@@ -200,8 +200,8 @@ html, body, [class*="css"] {
     inset: 0;
     background: linear-gradient(
         to right,
-        rgba(0,0,0,0.95) 25%,
-        rgba(0,0,0,0.3) 70%
+        rgba(0,0,0,0.95) 20%,
+        rgba(0,0,0,0.4) 70%
     );
 }
 
@@ -209,8 +209,8 @@ html, body, [class*="css"] {
     position: absolute;
     bottom: 60px;
     left: 50px;
-    z-index: 2;
     width: 45%;
+    z-index: 2;
 }
 
 .hero-title {
@@ -272,10 +272,6 @@ html, body, [class*="css"] {
     font-weight: bold;
 }
 
-.stButton > button:hover {
-    transform: scale(1.02);
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -320,9 +316,6 @@ with col2:
         2015
     )
 
-# =====================================================
-# SEARCH
-# =====================================================
 search = st.text_input(
     "🔍 Search Movie",
     placeholder="Search movies like Interstellar..."
@@ -339,7 +332,6 @@ if st.button("🎬 Discover Movies"):
 
     else:
 
-        # FILTER
         filtered = movies[
             (
                 movies['genres'].astype(str).str.contains(
@@ -390,22 +382,22 @@ if st.button("🎬 Discover Movies"):
         # HERO MOVIE
         hero_movie = top_movies.iloc[0]
 
-        hero_poster = fetch_poster(
-            hero_movie['title']
-        )
+        hero_poster = fetch_poster(hero_movie['title'])
 
         # HERO SECTION
         st.markdown(
             f"""
-            <div class='hero'
+            <div class='hero-container'
             style="
             background-image:
             linear-gradient(
             to right,
             rgba(0,0,0,0.95),
-            rgba(0,0,0,0.2)),
+            rgba(0,0,0,0.3)),
             url('{hero_poster}');
             ">
+
+                <div class='hero-overlay'></div>
 
                 <div class='hero-content'>
 
@@ -429,12 +421,13 @@ if st.button("🎬 Discover Movies"):
             unsafe_allow_html=True
         )
 
-        # RECOMMENDED
+        # SECTION TITLE
         st.markdown(
             "<div class='section-title'>🔥 Recommended For You</div>",
             unsafe_allow_html=True
         )
 
+        # MOVIE GRID
         cols = st.columns(5)
 
         for i, row in enumerate(top_movies.itertuples()):

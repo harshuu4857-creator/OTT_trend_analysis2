@@ -3,9 +3,7 @@ import pandas as pd
 import numpy as np
 import ast
 import requests
-
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.ensemble import RandomForestRegressor
+import joblib
 
 # =====================================================
 # PAGE CONFIG
@@ -15,6 +13,13 @@ st.set_page_config(
     layout="wide",
     page_icon="🎬"
 )
+
+# =====================================================
+# LOAD SAVED MODEL + VECTORIZER
+# =====================================================
+model = joblib.load("movie_model.pkl")
+
+cv = joblib.load("vectorizer.pkl")
 
 # =====================================================
 # TMDB API
@@ -27,6 +32,7 @@ TMDB_API_KEY = "5609ab5a9c50d7e2e03b53ff1e36401a"
 def fetch_poster(movie_name):
 
     try:
+
         url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_name}"
 
         data = requests.get(url).json()
@@ -47,6 +53,7 @@ def fetch_poster(movie_name):
 # LOAD DATA
 # =====================================================
 movies = pd.read_csv("tmdb_5000_movies.csv")
+
 credits = pd.read_csv("tmdb_5000_credits.csv")
 
 movies = movies.merge(credits, on='title')
@@ -91,12 +98,15 @@ movies['genres'] = movies['genres'].apply(convert)
 def get_cast(obj):
 
     L = []
+
     counter = 0
 
     for i in ast.literal_eval(obj):
 
         if counter != 3:
+
             L.append(i['name'])
+
             counter += 1
 
         else:
@@ -116,7 +126,9 @@ def fetch_director(obj):
     for i in ast.literal_eval(obj):
 
         if i['job'] == 'Director':
+
             L.append(i['name'])
+
             break
 
     return L
@@ -152,37 +164,6 @@ movies['tags'] = movies['tags'].apply(
 )
 
 # =====================================================
-# VECTORIZE
-# =====================================================
-cv = CountVectorizer(
-    max_features=2000,
-    stop_words='english'
-)
-
-vectors = cv.fit_transform(
-    movies['tags']
-).toarray()
-
-# =====================================================
-# FEATURES
-# =====================================================
-year_feature = movies['year'].values.reshape(-1,1)
-
-X = np.concatenate(
-    (vectors, year_feature),
-    axis=1
-)
-
-y = movies['vote_average']
-
-# =====================================================
-# MODEL
-# =====================================================
-model = RandomForestRegressor()
-
-model.fit(X, y)
-
-# =====================================================
 # PREMIUM CSS
 # =====================================================
 st.markdown("""
@@ -194,33 +175,24 @@ html, body, [class*="css"]  {
     font-family: 'Poppins', sans-serif;
 }
 
-/* MAIN CONTAINER */
 .block-container {
     padding-top: 1rem;
     padding-left: 3rem;
     padding-right: 3rem;
 }
 
-/* HERO SECTION */
 .hero {
     position: relative;
     height: 500px;
     border-radius: 25px;
     overflow: hidden;
     margin-bottom: 40px;
-    background: linear-gradient(
-        to right,
-        rgba(0,0,0,0.95) 30%,
-        rgba(0,0,0,0.2)
-    );
 }
 
-/* TITLES */
 .big-title {
     font-size: 70px;
     font-weight: 800;
     letter-spacing: -2px;
-    margin-bottom: 0;
 }
 
 .subtitle {
@@ -229,7 +201,6 @@ html, body, [class*="css"]  {
     margin-top: -10px;
 }
 
-/* SECTION */
 .section-title {
     font-size: 30px;
     font-weight: 700;
@@ -237,7 +208,6 @@ html, body, [class*="css"]  {
     margin-bottom: 20px;
 }
 
-/* MOVIE CARD */
 .movie-card {
     background: #141414;
     border-radius: 20px;
@@ -251,19 +221,12 @@ html, body, [class*="css"]  {
     transform: scale(1.06);
 }
 
-/* POSTER */
-.movie-card img {
-    border-radius: 20px;
-}
-
-/* MOVIE NAME */
 .movie-name {
     font-size: 16px;
     font-weight: 600;
     margin-top: 10px;
 }
 
-/* MOVIE INFO */
 .movie-info {
     color: #b3b3b3;
     font-size: 14px;
@@ -284,29 +247,20 @@ html, body, [class*="css"]  {
     transform: scale(1.03);
 }
 
-/* MULTISELECT */
-div[data-baseweb="select"] {
-    background-color: #141414;
-    border-radius: 12px;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
 # HEADER
 # =====================================================
-st.markdown(
-    """
-    <div>
-        <div class='big-title'>NETFLIX AI</div>
-        <div class='subtitle'>
-            AI-Powered Movie Recommendation & Prediction System
-        </div>
+st.markdown("""
+<div>
+    <div class='big-title'>NETFLIX AI</div>
+    <div class='subtitle'>
+        AI Powered Movie Recommendation System
     </div>
-    """,
-    unsafe_allow_html=True
-)
+</div>
+""", unsafe_allow_html=True)
 
 st.write("")
 
@@ -315,19 +269,25 @@ st.write("")
 # =====================================================
 all_genres = sorted(
     set(
-        " ".join(movies['genres'].apply(lambda x:" ".join(x))).split()
+        " ".join(
+            movies['genres'].apply(
+                lambda x:" ".join(x)
+            )
+        ).split()
     )
 )
 
 col1, col2 = st.columns([2,1])
 
 with col1:
+
     selected_genres = st.multiselect(
         "🎭 Select Genre(s)",
         all_genres
     )
 
 with col2:
+
     year = st.slider(
         "📅 Select Year",
         1980,
@@ -340,7 +300,7 @@ with col2:
 # =====================================================
 search = st.text_input(
     "🔍 Search Movie",
-    placeholder="Search movies like Interstellar, Avatar..."
+    placeholder="Search movies like Interstellar..."
 )
 
 # =====================================================
@@ -349,20 +309,26 @@ search = st.text_input(
 if st.button("🎬 Discover Movies"):
 
     if not selected_genres:
+
         st.warning("Please select at least one genre")
 
     else:
 
         # FILTER
         filtered = movies[
-            (movies['genres'].astype(str).str.contains(
-                selected_genres[0],
-                case=False
-            )) &
-            (abs(movies['year'] - year) <= 5)
+            (
+                movies['genres'].astype(str).str.contains(
+                    selected_genres[0],
+                    case=False
+                )
+            )
+            &
+            (
+                abs(movies['year'] - year) <= 5
+            )
         ].copy()
 
-        # VECTORIZE FILTERED
+        # VECTORIZE
         vectors_filtered = cv.transform(
             filtered['tags']
         ).toarray()
@@ -374,8 +340,10 @@ if st.button("🎬 Discover Movies"):
             axis=1
         )
 
-        # PREDICTION
-        filtered['predicted_rating'] = model.predict(X_filtered)
+        # PREDICT
+        filtered['predicted_rating'] = model.predict(
+            X_filtered
+        )
 
         # SORT
         top_movies = filtered.sort_values(
@@ -383,22 +351,24 @@ if st.button("🎬 Discover Movies"):
             ascending=False
         ).head(10)
 
-        # =====================================================
-        # HERO SECTION
-        # =====================================================
+        # HERO
         hero_movie = top_movies.iloc[0]
 
-        hero_poster = fetch_poster(hero_movie['title'])
+        hero_poster = fetch_poster(
+            hero_movie['title']
+        )
 
         st.markdown(
             f"""
             <div class="hero"
             style="
             background-image:
-            linear-gradient(to right,
+            linear-gradient(
+            to right,
             rgba(0,0,0,0.95),
             rgba(0,0,0,0.2)),
             url('{hero_poster}');
+
             background-size: cover;
             background-position: center;
             ">
@@ -412,7 +382,6 @@ if st.button("🎬 Discover Movies"):
 
             <h1 style="
             font-size:60px;
-            margin-bottom:10px;
             ">
             {hero_movie['title']}
             </h1>
@@ -425,8 +394,7 @@ if st.button("🎬 Discover Movies"):
             color:#d1d1d1;
             font-size:18px;
             ">
-            AI-selected premium recommendation based on
-            your preferences.
+            AI-selected premium recommendation.
             </p>
 
             </div>
@@ -435,9 +403,7 @@ if st.button("🎬 Discover Movies"):
             unsafe_allow_html=True
         )
 
-        # =====================================================
         # RECOMMENDED
-        # =====================================================
         st.markdown(
             "<div class='section-title'>🔥 Recommended For You</div>",
             unsafe_allow_html=True
@@ -451,7 +417,10 @@ if st.button("🎬 Discover Movies"):
 
                 poster = fetch_poster(row.title)
 
-                st.markdown("<div class='movie-card'>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div class='movie-card'>",
+                    unsafe_allow_html=True
+                )
 
                 st.image(
                     poster,
@@ -473,32 +442,7 @@ if st.button("🎬 Discover Movies"):
                     unsafe_allow_html=True
                 )
 
-                st.markdown("</div>", unsafe_allow_html=True)
-
-        # =====================================================
-        # TRENDING
-        # =====================================================
-        st.markdown(
-            "<div class='section-title'>🎯 Trending Movies</div>",
-            unsafe_allow_html=True
-        )
-
-        trending = movies.sort_values(
-            by='vote_average',
-            ascending=False
-        ).head(10)
-
-        cols = st.columns(5)
-
-        for i, row in enumerate(trending.itertuples()):
-
-            with cols[i % 5]:
-
-                poster = fetch_poster(row.title)
-
-                st.image(
-                    poster,
-                    use_container_width=True
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
                 )
-
-                st.caption(row.title)

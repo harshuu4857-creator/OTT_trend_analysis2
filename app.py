@@ -124,7 +124,7 @@ def load_data():
 
     movies['crew'] = movies['crew'].apply(fetch_director)
 
-    # CLEAN SPACES
+    # REMOVE SPACES
     movies['genres'] = movies['genres'].apply(
         lambda x:[i.replace(" ","") for i in x]
     )
@@ -153,7 +153,7 @@ def load_data():
 movies = load_data()
 
 # =====================================================
-# CSS
+# PREMIUM CSS
 # =====================================================
 st.markdown("""
 <style>
@@ -389,41 +389,40 @@ if st.button("🎬 Discover Movies"):
         hero_poster = fetch_poster(hero_movie['title'])
 
         # HERO SECTION
-        st.markdown(
-            f"""
-            <div class='hero-container'
-            style="
-            background-image:
-            linear-gradient(
-            to right,
-            rgba(0,0,0,0.95),
-            rgba(0,0,0,0.3)),
-            url('{hero_poster}');
-            ">
+        hero_html = f"""
+        <div class="hero-container"
+        style="
+        background-image:
+        linear-gradient(
+        to right,
+        rgba(0,0,0,0.95),
+        rgba(0,0,0,0.4)),
+        url('{hero_poster}');
+        ">
 
-                <div class='hero-overlay'></div>
+        <div class="hero-overlay"></div>
 
-                <div class='hero-content'>
+        <div class="hero-content">
 
-                    <div class='hero-title'>
-                        {hero_movie['title']}
-                    </div>
+        <div class="hero-title">
+        {hero_movie['title']}
+        </div>
 
-                    <div class='hero-rating'>
-                        ⭐ {round(hero_movie['predicted_rating'],2)}
-                    </div>
+        <div class="hero-rating">
+        ⭐ {round(hero_movie['predicted_rating'],2)}
+        </div>
 
-                    <div class='hero-desc'>
-                        AI selected premium recommendation
-                        based on your preferences.
-                    </div>
+        <div class="hero-desc">
+        AI selected premium recommendation
+        based on your preferences.
+        </div>
 
-                </div>
+        </div>
 
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>
+        """
+
+        st.markdown(hero_html, unsafe_allow_html=True)
 
         # SECTION TITLE
         st.markdown(

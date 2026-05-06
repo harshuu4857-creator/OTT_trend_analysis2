@@ -1,6 +1,3 @@
-# Final Fixed app.py (Hero UI Bug Fixed + Clean Netflix Layout)
-
-```python
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -12,13 +9,13 @@ import joblib
 # PAGE CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="Netflix AI Movie Predictor",
+    page_title="Netflix AI",
     layout="wide",
     page_icon="🎬"
 )
 
 # =====================================================
-# LOAD MODEL
+# LOAD MODEL + VECTORIZER
 # =====================================================
 model = joblib.load("movie_model.pkl")
 cv = joblib.load("vectorizer.pkl")
@@ -31,6 +28,7 @@ TMDB_API_KEY = "5609ab5a9c50d7e2e03b53ff1e36401a"
 # =====================================================
 # FETCH POSTER
 # =====================================================
+@st.cache_data
 def fetch_poster(movie_name):
 
     try:
@@ -54,113 +52,108 @@ def fetch_poster(movie_name):
 # =====================================================
 # LOAD DATA
 # =====================================================
-movies = pd.read_csv("tmdb_5000_movies.csv")
-credits = pd.read_csv("tmdb_5000_credits.csv")
+@st.cache_data
+def load_data():
 
-movies = movies.merge(credits, on='title')
+    movies = pd.read_csv("tmdb_5000_movies.csv")
+    credits = pd.read_csv("tmdb_5000_credits.csv")
 
-movies = movies[
-    [
-        'title',
-        'genres',
-        'cast',
-        'crew',
-        'release_date',
-        'vote_average'
+    movies = movies.merge(credits, on='title')
+
+    movies = movies[
+        [
+            'title',
+            'genres',
+            'cast',
+            'crew',
+            'release_date',
+            'vote_average'
+        ]
     ]
-]
 
-movies.dropna(inplace=True)
+    movies.dropna(inplace=True)
 
-# =====================================================
-# YEAR
-# =====================================================
-movies['year'] = movies['release_date'].apply(
-    lambda x: int(x.split("-")[0])
-)
+    # YEAR
+    movies['year'] = movies['release_date'].apply(
+        lambda x: int(x.split("-")[0])
+    )
 
-# =====================================================
-# GENRES
-# =====================================================
-def convert(obj):
+    # GENRES
+    def convert(obj):
 
-    L = []
+        L = []
 
-    for i in ast.literal_eval(obj):
-        L.append(i['name'])
-
-    return L
-
-movies['genres'] = movies['genres'].apply(convert)
-
-# =====================================================
-# CAST
-# =====================================================
-def get_cast(obj):
-
-    L = []
-    counter = 0
-
-    for i in ast.literal_eval(obj):
-
-        if counter != 3:
+        for i in ast.literal_eval(obj):
             L.append(i['name'])
-            counter += 1
 
-        else:
-            break
+        return L
 
-    return L
+    movies['genres'] = movies['genres'].apply(convert)
 
-movies['cast'] = movies['cast'].apply(get_cast)
+    # CAST
+    def get_cast(obj):
+
+        L = []
+        counter = 0
+
+        for i in ast.literal_eval(obj):
+
+            if counter != 3:
+                L.append(i['name'])
+                counter += 1
+
+            else:
+                break
+
+        return L
+
+    movies['cast'] = movies['cast'].apply(get_cast)
+
+    # DIRECTOR
+    def fetch_director(obj):
+
+        L = []
+
+        for i in ast.literal_eval(obj):
+
+            if i['job'] == 'Director':
+                L.append(i['name'])
+                break
+
+        return L
+
+    movies['crew'] = movies['crew'].apply(fetch_director)
+
+    # CLEAN SPACES
+    movies['genres'] = movies['genres'].apply(
+        lambda x:[i.replace(" ","") for i in x]
+    )
+
+    movies['cast'] = movies['cast'].apply(
+        lambda x:[i.replace(" ","") for i in x]
+    )
+
+    movies['crew'] = movies['crew'].apply(
+        lambda x:[i.replace(" ","") for i in x]
+    )
+
+    # TAGS
+    movies['tags'] = (
+        movies['genres'] +
+        movies['cast'] +
+        movies['crew']
+    )
+
+    movies['tags'] = movies['tags'].apply(
+        lambda x:" ".join(x)
+    )
+
+    return movies
+
+movies = load_data()
 
 # =====================================================
-# DIRECTOR
-# =====================================================
-def fetch_director(obj):
-
-    L = []
-
-    for i in ast.literal_eval(obj):
-
-        if i['job'] == 'Director':
-            L.append(i['name'])
-            break
-
-    return L
-
-movies['crew'] = movies['crew'].apply(fetch_director)
-
-# =====================================================
-# CLEAN SPACES
-# =====================================================
-movies['genres'] = movies['genres'].apply(
-    lambda x:[i.replace(" ","") for i in x]
-)
-
-movies['cast'] = movies['cast'].apply(
-    lambda x:[i.replace(" ","") for i in x]
-)
-
-movies['crew'] = movies['crew'].apply(
-    lambda x:[i.replace(" ","") for i in x]
-)
-
-# =====================================================
-# TAGS
-# =====================================================
-movies['tags'] = (
-    movies['genres'] +
-    movies['cast'] +
-    movies['crew']
-)
-
-movies['tags'] = movies['tags'].apply(
-    lambda x:" ".join(x)
-)
-
-# =====================================================
-# CSS
+# PREMIUM CSS
 # =====================================================
 st.markdown("""
 <style>
@@ -291,7 +284,9 @@ html, body, [class*="css"] {
 # =====================================================
 st.markdown("""
 <div class='main-title'>NETFLIX AI</div>
-<div class='subtitle'>AI Powered Movie Recommendation System</div>
+<div class='subtitle'>
+AI Powered Movie Recommendation System
+</div>
 """, unsafe_allow_html=True)
 
 # =====================================================
@@ -300,7 +295,9 @@ st.markdown("""
 all_genres = sorted(
     set(
         " ".join(
-            movies['genres'].apply(lambda x:" ".join(x))
+            movies['genres'].apply(
+                lambda x:" ".join(x)
+            )
         ).split()
     )
 )
@@ -308,12 +305,14 @@ all_genres = sorted(
 col1, col2 = st.columns([2,1])
 
 with col1:
+
     selected_genres = st.multiselect(
         "🎭 Select Genre(s)",
         all_genres
     )
 
 with col2:
+
     year = st.slider(
         "📅 Select Year",
         1980,
@@ -321,6 +320,9 @@ with col2:
         2015
     )
 
+# =====================================================
+# SEARCH
+# =====================================================
 search = st.text_input(
     "🔍 Search Movie",
     placeholder="Search movies like Interstellar..."
@@ -332,10 +334,12 @@ search = st.text_input(
 if st.button("🎬 Discover Movies"):
 
     if not selected_genres:
+
         st.warning("Please select at least one genre")
 
     else:
 
+        # FILTER
         filtered = movies[
             (
                 movies['genres'].astype(str).str.contains(
@@ -349,6 +353,17 @@ if st.button("🎬 Discover Movies"):
             )
         ].copy()
 
+        # SEARCH FILTER
+        if search:
+
+            filtered = filtered[
+                filtered['title'].str.contains(
+                    search,
+                    case=False,
+                    na=False
+                )
+            ]
+
         # VECTORIZE
         vectors_filtered = cv.transform(
             filtered['tags']
@@ -361,8 +376,10 @@ if st.button("🎬 Discover Movies"):
             axis=1
         )
 
-        # PREDICT
-        filtered['predicted_rating'] = model.predict(X_filtered)
+        # PREDICTION
+        filtered['predicted_rating'] = model.predict(
+            X_filtered
+        )
 
         # SORT
         top_movies = filtered.sort_values(
@@ -370,16 +387,25 @@ if st.button("🎬 Discover Movies"):
             ascending=False
         ).head(10)
 
-        # HERO
+        # HERO MOVIE
         hero_movie = top_movies.iloc[0]
 
-        hero_poster = fetch_poster(hero_movie['title'])
+        hero_poster = fetch_poster(
+            hero_movie['title']
+        )
 
+        # HERO SECTION
         st.markdown(
             f"""
-            <div class='hero' style="background-image:url('{hero_poster}');">
-
-                <div class='hero-overlay'></div>
+            <div class='hero'
+            style="
+            background-image:
+            linear-gradient(
+            to right,
+            rgba(0,0,0,0.95),
+            rgba(0,0,0,0.2)),
+            url('{hero_poster}');
+            ">
 
                 <div class='hero-content'>
 
@@ -392,7 +418,8 @@ if st.button("🎬 Discover Movies"):
                     </div>
 
                     <div class='hero-desc'>
-                        AI selected premium recommendation based on your preferences.
+                        AI selected premium recommendation
+                        based on your preferences.
                     </div>
 
                 </div>
@@ -416,7 +443,10 @@ if st.button("🎬 Discover Movies"):
 
                 poster = fetch_poster(row.title)
 
-                st.markdown("<div class='movie-card'>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div class='movie-card'>",
+                    unsafe_allow_html=True
+                )
 
                 st.image(
                     poster,
@@ -438,22 +468,7 @@ if st.button("🎬 Discover Movies"):
                     unsafe_allow_html=True
                 )
 
-                st.markdown("</div>", unsafe_allow_html=True)
-```
-
-# requirements.txt
-
-```txt
-streamlit
-pandas
-numpy
-scikit-learn
-requests
-joblib
-```
-
-# Run
-
-```bash
-streamlit run app.py
-```
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
+                )

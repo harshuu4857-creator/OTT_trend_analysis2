@@ -421,7 +421,7 @@ all_genres = sorted(
 
 st.markdown("<div class='filter-box'>", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([2.2,1,1])
+col1, col2, col3, col4 = st.columns([2.2,1,1,1])
 
 with col1:
 
@@ -444,6 +444,16 @@ with col3:
     search = st.text_input(
         "🔍 Search",
         placeholder="Search Movie"
+    )
+
+with col4:
+
+    min_rating = st.slider(
+        "⭐ Rating",
+        0.0,
+        10.0,
+        7.0,
+        0.1
     )
 
 discover = st.button("🎬 Discover Movies")
@@ -475,6 +485,10 @@ if discover and selected_genres:
         &
         (
             abs(movies['year'] - year) <= 5
+        )
+        &
+        (
+            movies['vote_average'] >= min_rating
         )
     ].copy()
 

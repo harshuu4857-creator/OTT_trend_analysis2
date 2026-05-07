@@ -67,7 +67,10 @@ def load_data():
             'cast',
             'crew',
             'release_date',
-            'vote_average'
+            'vote_average',
+            'budget',
+            'original_language',
+            'popularity'
         ]
     ]
 
@@ -153,7 +156,7 @@ def load_data():
 movies = load_data()
 
 # =====================================================
-# PREMIUM CSS
+# CSS
 # =====================================================
 st.markdown("""
 <style>
@@ -174,13 +177,11 @@ html, body, [class*="css"] {
     font-size: 75px;
     font-weight: 900;
     color: white;
-    margin-bottom: 0px;
 }
 
 .subtitle {
     color: #aaaaaa;
     font-size: 20px;
-    margin-top: -10px;
     margin-bottom: 30px;
 }
 
@@ -200,8 +201,8 @@ html, body, [class*="css"] {
     inset: 0;
     background: linear-gradient(
         to right,
-        rgba(0,0,0,0.95) 20%,
-        rgba(0,0,0,0.4) 70%
+        rgba(0,0,0,0.95),
+        rgba(0,0,0,0.3)
     );
 }
 
@@ -216,8 +217,6 @@ html, body, [class*="css"] {
 .hero-title {
     font-size: 60px;
     font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 15px;
 }
 
 .hero-rating {
@@ -234,13 +233,12 @@ html, body, [class*="css"] {
 .section-title {
     font-size: 34px;
     font-weight: 800;
-    margin-top: 20px;
     margin-bottom: 20px;
 }
 
 .movie-card {
     background: #141414;
-    padding: 10px;
+    padding: 12px;
     border-radius: 18px;
     transition: 0.4s;
     margin-bottom: 20px;
@@ -251,14 +249,15 @@ html, body, [class*="css"] {
 }
 
 .movie-name {
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 700;
     margin-top: 10px;
 }
 
 .movie-info {
-    color: #bbbbbb;
+    color: #d1d1d1;
     font-size: 14px;
+    margin-top: 4px;
 }
 
 .stButton > button {
@@ -270,10 +269,6 @@ html, body, [class*="css"] {
     width: 230px;
     font-size: 18px;
     font-weight: bold;
-}
-
-.stButton > button:hover {
-    transform: scale(1.02);
 }
 
 </style>
@@ -349,7 +344,6 @@ if st.button("🎬 Discover Movies"):
             )
         ].copy()
 
-        # SEARCH FILTER
         if search:
 
             filtered = filtered[
@@ -360,7 +354,6 @@ if st.button("🎬 Discover Movies"):
                 )
             ]
 
-        # VECTORIZE
         vectors_filtered = cv.transform(
             filtered['tags']
         ).toarray()
@@ -372,23 +365,19 @@ if st.button("🎬 Discover Movies"):
             axis=1
         )
 
-        # PREDICTION
         filtered['predicted_rating'] = model.predict(
             X_filtered
         )
 
-        # SORT
         top_movies = filtered.sort_values(
             by='predicted_rating',
             ascending=False
         ).head(10)
 
-        # HERO MOVIE
+        # HERO
         hero_movie = top_movies.iloc[0]
-
         hero_poster = fetch_poster(hero_movie['title'])
 
-        # HERO SECTION
         hero_html = f"""
         <div class="hero-container"
         style="
@@ -409,7 +398,7 @@ if st.button("🎬 Discover Movies"):
         </div>
 
         <div class="hero-rating">
-        ⭐ {round(hero_movie['predicted_rating'],2)}
+        ⭐ {round(hero_movie['vote_average'],2)}
         </div>
 
         <div class="hero-desc">
@@ -424,13 +413,11 @@ if st.button("🎬 Discover Movies"):
 
         st.markdown(hero_html, unsafe_allow_html=True)
 
-        # SECTION TITLE
         st.markdown(
             "<div class='section-title'>🔥 Recommended For You</div>",
             unsafe_allow_html=True
         )
 
-        # MOVIE GRID
         cols = st.columns(5)
 
         for i, row in enumerate(top_movies.itertuples()):
@@ -455,12 +442,27 @@ if st.button("🎬 Discover Movies"):
                 )
 
                 st.markdown(
-                    f"<div class='movie-info'>⭐ {round(row.predicted_rating,2)}</div>",
+                    f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
                     unsafe_allow_html=True
                 )
 
                 st.markdown(
-                    f"<div class='movie-info'>📅 {row.year}</div>",
+                    f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>📅 Year: {row.year}</div>",
                     unsafe_allow_html=True
                 )
 

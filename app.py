@@ -173,26 +173,55 @@ html, body, [class*="css"] {
     padding-right: 2rem;
 }
 
-.main-title {
-    font-size: 45px;
-    font-weight: 900;
-    color: white;
-    margin-top: 10px;
+/* NAVBAR */
+
+.navbar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 25px;
+    background:#111111;
+    border-radius:18px;
+    margin-bottom:25px;
 }
 
-.subtitle {
-    color: #aaaaaa;
-    font-size: 18px;
-    margin-bottom: 30px;
+.logo {
+    font-size:36px;
+    font-weight:900;
+    color:#E50914;
 }
+
+.stats {
+    display:flex;
+    gap:18px;
+}
+
+.stat-box {
+    background:#181818;
+    padding:10px 18px;
+    border-radius:12px;
+    text-align:center;
+}
+
+.stat-number {
+    font-size:24px;
+    font-weight:bold;
+}
+
+.stat-label {
+    color:#aaaaaa;
+    font-size:13px;
+}
+
+/* HERO */
 
 .hero-container {
     position: relative;
-    height: 550px;
+    height: 600px;
     border-radius: 25px;
     overflow: hidden;
-    margin-top: 30px;
-    margin-bottom: 50px;
+    margin-top: 20px;
+    margin-bottom: 40px;
     background-size: cover;
     background-position: center;
 }
@@ -203,7 +232,7 @@ html, body, [class*="css"] {
     background: linear-gradient(
         to right,
         rgba(0,0,0,0.95),
-        rgba(0,0,0,0.3)
+        rgba(0,0,0,0.2)
     );
 }
 
@@ -211,31 +240,40 @@ html, body, [class*="css"] {
     position: absolute;
     bottom: 60px;
     left: 50px;
-    width: 45%;
+    width: 40%;
     z-index: 2;
 }
 
 .hero-title {
-    font-size: 60px;
+    font-size: 65px;
     font-weight: 900;
+    line-height:1;
+    margin-bottom:15px;
 }
 
 .hero-rating {
     color: #e50914;
     font-size: 28px;
     font-weight: bold;
+    margin-bottom:10px;
 }
 
 .hero-desc {
     color: #dddddd;
     font-size: 18px;
+    line-height:1.6;
 }
+
+/* SECTION */
 
 .section-title {
     font-size: 34px;
     font-weight: 800;
+    margin-top:20px;
     margin-bottom: 20px;
 }
+
+/* CARDS */
 
 .movie-card {
     background: #141414;
@@ -261,29 +299,37 @@ html, body, [class*="css"] {
     margin-top: 4px;
 }
 
+/* BUTTON */
+
 .stButton > button {
     background: linear-gradient(90deg,#e50914,#ff4d4d);
     color: white;
     border: none;
     border-radius: 12px;
-    height: 55px;
-    width: 230px;
+    height: 50px;
+    width: 220px;
     font-size: 18px;
     font-weight: bold;
 }
 
-[data-testid="stMetric"] {
-    background-color: #141414;
-    padding: 15px;
-    border-radius: 15px;
-    text-align: center;
+/* INPUTS */
+
+.stTextInput input {
+    background-color:#181818;
+    color:white;
+    border-radius:12px;
+}
+
+.stMultiSelect div {
+    background-color:#181818;
+    border-radius:12px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# TOP BAR STATS
+# NAVBAR
 # =====================================================
 
 total_movies = len(movies)
@@ -298,50 +344,34 @@ all_genres_count = len(
     )
 )
 
-top1, top2, top3, top4 = st.columns([2,1,1,2])
+st.markdown(f"""
+<div class="navbar">
 
-with top1:
+<div class="logo">
+NETFLIX AI
+</div>
 
-    st.markdown("""
-    <div class='main-title'>
-    NETFLIX AI
-    </div>
-    """, unsafe_allow_html=True)
+<div class="stats">
 
-with top2:
+<div class="stat-box">
+<div class="stat-number">{total_movies}</div>
+<div class="stat-label">Movies</div>
+</div>
 
-    st.metric(
-        label="🎬 Movies",
-        value=f"{total_movies:,}"
-    )
+<div class="stat-box">
+<div class="stat-number">{all_genres_count}</div>
+<div class="stat-label">Genres</div>
+</div>
 
-with top3:
+</div>
 
-    st.metric(
-        label="🎭 Genres",
-        value=all_genres_count
-    )
-
-with top4:
-
-    search = st.text_input(
-        "",
-        placeholder="🔍 Search Movie",
-        label_visibility="collapsed"
-    )
-
-# =====================================================
-# SUBTITLE
-# =====================================================
-st.markdown("""
-<div class='subtitle'>
-AI Powered OTT Trend Analysis & Recommendation System
 </div>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# INPUTS
+# FILTERS
 # =====================================================
+
 all_genres = sorted(
     set(
         " ".join(
@@ -352,28 +382,52 @@ all_genres = sorted(
     )
 )
 
-col1, col2 = st.columns([2,1])
+col1, col2, col3 = st.columns([2,1,1])
 
 with col1:
 
     selected_genres = st.multiselect(
-        "🎭 Select Genre(s)",
-        all_genres
+        "",
+        all_genres,
+        placeholder="🎭 Select Genres"
     )
 
 with col2:
 
     year = st.slider(
-        "📅 Select Year",
+        "📅 Year",
         1980,
         2020,
         2015
     )
 
+with col3:
+
+    search = st.text_input(
+        "",
+        placeholder="🔍 Search Movie"
+    )
+
 # =====================================================
 # BUTTON
 # =====================================================
-if st.button("🎬 Discover Movies"):
+
+discover = st.button("🎬 Discover Movies")
+
+# =====================================================
+# DEFAULT HERO
+# =====================================================
+
+default_movie = movies.sort_values(
+    by='vote_average',
+    ascending=False
+).iloc[0]
+
+# =====================================================
+# RESULTS
+# =====================================================
+
+if discover:
 
     if not selected_genres:
 
@@ -394,7 +448,6 @@ if st.button("🎬 Discover Movies"):
             )
         ].copy()
 
-        # SEARCH FILTER
         if search:
 
             filtered = filtered[
@@ -405,7 +458,6 @@ if st.button("🎬 Discover Movies"):
                 )
             ]
 
-        # VECTORIZE
         vectors_filtered = cv.transform(
             filtered['tags']
         ).toarray()
@@ -417,113 +469,128 @@ if st.button("🎬 Discover Movies"):
             axis=1
         )
 
-        # PREDICTION
         filtered['predicted_rating'] = model.predict(
             X_filtered
         )
 
-        # SORT
         top_movies = filtered.sort_values(
             by='predicted_rating',
             ascending=False
         ).head(10)
 
-        # HERO MOVIE
         hero_movie = top_movies.iloc[0]
-        hero_poster = fetch_poster(hero_movie['title'])
 
-        # HERO SECTION
-        hero_html = f"""
-        <div class="hero-container"
-        style="
-        background-image:
-        linear-gradient(
-        to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.4)),
-        url('{hero_poster}');
-        ">
+else:
 
-        <div class="hero-overlay"></div>
+    top_movies = movies.sort_values(
+        by='vote_average',
+        ascending=False
+    ).head(10)
 
-        <div class="hero-content">
+    hero_movie = default_movie
 
-        <div class="hero-title">
-        {hero_movie['title']}
-        </div>
+# =====================================================
+# HERO SECTION
+# =====================================================
 
-        <div class="hero-rating">
-        ⭐ {round(hero_movie['vote_average'],2)}
-        </div>
+hero_poster = fetch_poster(hero_movie['title'])
 
-        <div class="hero-desc">
-        AI selected premium recommendation
-        based on your preferences.
-        </div>
+hero_html = f"""
+<div class="hero-container"
+style="
+background-image:
+linear-gradient(
+to right,
+rgba(0,0,0,0.95),
+rgba(0,0,0,0.3)),
+url('{hero_poster}');
+">
 
-        </div>
+<div class="hero-overlay"></div>
 
-        </div>
-        """
+<div class="hero-content">
 
-        st.markdown(hero_html, unsafe_allow_html=True)
+<div class="hero-title">
+{hero_movie['title']}
+</div>
 
-        # SECTION TITLE
+<div class="hero-rating">
+⭐ {round(hero_movie['vote_average'],2)}
+</div>
+
+<div class="hero-desc">
+AI powered OTT trend analysis and movie recommendation system based on genres, popularity, ratings and audience trends.
+</div>
+
+</div>
+
+</div>
+"""
+
+st.markdown(hero_html, unsafe_allow_html=True)
+
+# =====================================================
+# SECTION TITLE
+# =====================================================
+
+st.markdown(
+    "<div class='section-title'>🔥 Trending & Recommended</div>",
+    unsafe_allow_html=True
+)
+
+# =====================================================
+# MOVIE GRID
+# =====================================================
+
+cols = st.columns(5)
+
+for i, row in enumerate(top_movies.itertuples()):
+
+    with cols[i % 5]:
+
+        poster = fetch_poster(row.title)
+
         st.markdown(
-            "<div class='section-title'>🔥 Recommended For You</div>",
+            "<div class='movie-card'>",
             unsafe_allow_html=True
         )
 
-        # MOVIE GRID
-        cols = st.columns(5)
+        st.image(
+            poster,
+            use_container_width=True
+        )
 
-        for i, row in enumerate(top_movies.itertuples()):
+        st.markdown(
+            f"<div class='movie-name'>{row.title}</div>",
+            unsafe_allow_html=True
+        )
 
-            with cols[i % 5]:
+        st.markdown(
+            f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
+            unsafe_allow_html=True
+        )
 
-                poster = fetch_poster(row.title)
+        st.markdown(
+            f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
+            unsafe_allow_html=True
+        )
 
-                st.markdown(
-                    "<div class='movie-card'>",
-                    unsafe_allow_html=True
-                )
+        st.markdown(
+            f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
+            unsafe_allow_html=True
+        )
 
-                st.image(
-                    poster,
-                    use_container_width=True
-                )
+        st.markdown(
+            f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
+            unsafe_allow_html=True
+        )
 
-                st.markdown(
-                    f"<div class='movie-name'>{row.title}</div>",
-                    unsafe_allow_html=True
-                )
+        st.markdown(
+            f"<div class='movie-info'>📅 Year: {row.year}</div>",
+            unsafe_allow_html=True
+        )
 
-                st.markdown(
-                    f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    f"<div class='movie-info'>📅 Year: {row.year}</div>",
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    "</div>",
-                    unsafe_allow_html=True
-                )
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )

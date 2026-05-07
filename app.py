@@ -8,26 +8,30 @@ import joblib
 # =====================================================
 # PAGE CONFIG
 # =====================================================
+
 st.set_page_config(
-    page_title="Netflix AI",
+    page_title="OTT Trend Analysis",
     layout="wide",
     page_icon="🎬"
 )
 
 # =====================================================
-# LOAD MODEL + VECTORIZER
+# LOAD MODEL
 # =====================================================
+
 model = joblib.load("movie_model.pkl")
 cv = joblib.load("vectorizer.pkl")
 
 # =====================================================
 # TMDB API
 # =====================================================
+
 TMDB_API_KEY = "5609ab5a9c50d7e2e03b53ff1e36401a"
 
 # =====================================================
 # FETCH POSTER
 # =====================================================
+
 @st.cache_data
 def fetch_poster(movie_name):
 
@@ -52,6 +56,7 @@ def fetch_poster(movie_name):
 # =====================================================
 # LOAD DATA
 # =====================================================
+
 @st.cache_data
 def load_data():
 
@@ -97,6 +102,7 @@ def load_data():
     def get_cast(obj):
 
         L = []
+
         counter = 0
 
         for i in ast.literal_eval(obj):
@@ -158,11 +164,12 @@ movies = load_data()
 # =====================================================
 # CSS
 # =====================================================
+
 st.markdown("""
 <style>
 
 html, body, [class*="css"] {
-    background-color: #0b0f1a;
+    background-color: #050816;
     color: white;
     font-family: sans-serif;
 }
@@ -179,16 +186,28 @@ html, body, [class*="css"] {
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:18px 25px;
-    background:#111111;
-    border-radius:18px;
-    margin-bottom:25px;
+    background:#0f0f0f;
+    padding:20px 28px;
+    border-radius:20px;
+    margin-bottom:30px;
 }
 
-.logo {
-    font-size:36px;
+.logo-section {
+    display:flex;
+    flex-direction:column;
+}
+
+.logo-title {
+    font-size:42px;
     font-weight:900;
     color:#E50914;
+    line-height:1;
+}
+
+.logo-sub {
+    color:#bdbdbd;
+    margin-top:8px;
+    font-size:15px;
 }
 
 .stats {
@@ -197,28 +216,38 @@ html, body, [class*="css"] {
 }
 
 .stat-box {
-    background:#181818;
-    padding:10px 18px;
-    border-radius:12px;
+    background:#1a1a1a;
+    padding:14px 24px;
+    border-radius:14px;
     text-align:center;
+    min-width:120px;
 }
 
 .stat-number {
-    font-size:24px;
+    font-size:28px;
     font-weight:bold;
 }
 
 .stat-label {
     color:#aaaaaa;
-    font-size:13px;
+    font-size:14px;
+}
+
+/* FILTERS */
+
+.filter-box {
+    background:#111111;
+    padding:20px;
+    border-radius:20px;
+    margin-bottom:25px;
 }
 
 /* HERO */
 
 .hero-container {
     position: relative;
-    height: 600px;
-    border-radius: 25px;
+    height: 620px;
+    border-radius: 30px;
     overflow: hidden;
     margin-top: 20px;
     margin-bottom: 40px;
@@ -227,101 +256,101 @@ html, body, [class*="css"] {
 }
 
 .hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.2)
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+    to right,
+    rgba(0,0,0,0.96),
+    rgba(0,0,0,0.2)
     );
 }
 
 .hero-content {
-    position: absolute;
-    bottom: 60px;
-    left: 50px;
-    width: 40%;
-    z-index: 2;
+    position:absolute;
+    bottom:60px;
+    left:60px;
+    width:40%;
+    z-index:2;
 }
 
 .hero-title {
-    font-size: 65px;
-    font-weight: 900;
+    font-size:72px;
+    font-weight:900;
     line-height:1;
-    margin-bottom:15px;
+    margin-bottom:20px;
 }
 
 .hero-rating {
-    color: #e50914;
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom:10px;
+    color:#E50914;
+    font-size:32px;
+    font-weight:bold;
+    margin-bottom:15px;
 }
 
 .hero-desc {
-    color: #dddddd;
-    font-size: 18px;
-    line-height:1.6;
+    color:#d9d9d9;
+    font-size:18px;
+    line-height:1.7;
 }
 
 /* SECTION */
 
 .section-title {
-    font-size: 34px;
-    font-weight: 800;
+    font-size:34px;
+    font-weight:800;
     margin-top:20px;
-    margin-bottom: 20px;
+    margin-bottom:20px;
 }
 
-/* CARDS */
+/* MOVIE CARDS */
 
 .movie-card {
-    background: #141414;
-    padding: 12px;
-    border-radius: 18px;
-    transition: 0.4s;
-    margin-bottom: 20px;
+    background:#141414;
+    padding:12px;
+    border-radius:18px;
+    transition:0.4s;
+    margin-bottom:20px;
 }
 
 .movie-card:hover {
-    transform: scale(1.05);
+    transform:scale(1.05);
 }
 
 .movie-name {
-    font-size: 18px;
-    font-weight: 700;
-    margin-top: 10px;
+    font-size:18px;
+    font-weight:700;
+    margin-top:10px;
 }
 
 .movie-info {
-    color: #d1d1d1;
-    font-size: 14px;
-    margin-top: 4px;
+    color:#d1d1d1;
+    font-size:14px;
+    margin-top:4px;
 }
 
 /* BUTTON */
 
 .stButton > button {
-    background: linear-gradient(90deg,#e50914,#ff4d4d);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    height: 50px;
-    width: 220px;
-    font-size: 18px;
-    font-weight: bold;
+    background:linear-gradient(90deg,#E50914,#ff4d4d);
+    color:white;
+    border:none;
+    border-radius:14px;
+    height:52px;
+    width:220px;
+    font-size:18px;
+    font-weight:bold;
 }
 
 /* INPUTS */
 
 .stTextInput input {
-    background-color:#181818;
+    background:#181818;
     color:white;
     border-radius:12px;
 }
 
 .stMultiSelect div {
-    background-color:#181818;
+    background:#181818;
     border-radius:12px;
 }
 
@@ -347,8 +376,16 @@ all_genres_count = len(
 st.markdown(f"""
 <div class="navbar">
 
-<div class="logo">
-NETFLIX AI
+<div class="logo-section">
+
+<div class="logo-title">
+OTT Trend Analysis
+</div>
+
+<div class="logo-sub">
+Created by Harsh Patel
+</div>
+
 </div>
 
 <div class="stats">
@@ -382,14 +419,15 @@ all_genres = sorted(
     )
 )
 
-col1, col2, col3 = st.columns([2,1,1])
+st.markdown("<div class='filter-box'>", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns([2.2,1,1])
 
 with col1:
 
     selected_genres = st.multiselect(
-        "",
-        all_genres,
-        placeholder="🎭 Select Genres"
+        "🎭 Select Genres",
+        all_genres
     )
 
 with col2:
@@ -404,15 +442,13 @@ with col2:
 with col3:
 
     search = st.text_input(
-        "",
-        placeholder="🔍 Search Movie"
+        "🔍 Search",
+        placeholder="Search Movie"
     )
 
-# =====================================================
-# BUTTON
-# =====================================================
-
 discover = st.button("🎬 Discover Movies")
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # =====================================================
 # DEFAULT HERO
@@ -427,58 +463,52 @@ default_movie = movies.sort_values(
 # RESULTS
 # =====================================================
 
-if discover:
+if discover and selected_genres:
 
-    if not selected_genres:
-
-        st.warning("Please select at least one genre")
-
-    else:
-
-        filtered = movies[
-            (
-                movies['genres'].astype(str).str.contains(
-                    selected_genres[0],
-                    case=False
-                )
+    filtered = movies[
+        (
+            movies['genres'].astype(str).str.contains(
+                selected_genres[0],
+                case=False
             )
-            &
-            (
-                abs(movies['year'] - year) <= 5
+        )
+        &
+        (
+            abs(movies['year'] - year) <= 5
+        )
+    ].copy()
+
+    if search:
+
+        filtered = filtered[
+            filtered['title'].str.contains(
+                search,
+                case=False,
+                na=False
             )
-        ].copy()
+        ]
 
-        if search:
+    vectors_filtered = cv.transform(
+        filtered['tags']
+    ).toarray()
 
-            filtered = filtered[
-                filtered['title'].str.contains(
-                    search,
-                    case=False,
-                    na=False
-                )
-            ]
+    years_filtered = filtered['year'].values.reshape(-1,1)
 
-        vectors_filtered = cv.transform(
-            filtered['tags']
-        ).toarray()
+    X_filtered = np.concatenate(
+        (vectors_filtered, years_filtered),
+        axis=1
+    )
 
-        years_filtered = filtered['year'].values.reshape(-1,1)
+    filtered['predicted_rating'] = model.predict(
+        X_filtered
+    )
 
-        X_filtered = np.concatenate(
-            (vectors_filtered, years_filtered),
-            axis=1
-        )
+    top_movies = filtered.sort_values(
+        by='predicted_rating',
+        ascending=False
+    ).head(10)
 
-        filtered['predicted_rating'] = model.predict(
-            X_filtered
-        )
-
-        top_movies = filtered.sort_values(
-            by='predicted_rating',
-            ascending=False
-        ).head(10)
-
-        hero_movie = top_movies.iloc[0]
+    hero_movie = top_movies.iloc[0]
 
 else:
 
@@ -501,7 +531,7 @@ style="
 background-image:
 linear-gradient(
 to right,
-rgba(0,0,0,0.95),
+rgba(0,0,0,0.96),
 rgba(0,0,0,0.3)),
 url('{hero_poster}');
 ">
@@ -519,7 +549,7 @@ url('{hero_poster}');
 </div>
 
 <div class="hero-desc">
-AI powered OTT trend analysis and movie recommendation system based on genres, popularity, ratings and audience trends.
+AI powered OTT trend analysis and intelligent movie recommendation system using machine learning, genre analysis, popularity trends and audience insights.
 </div>
 
 </div>
@@ -534,7 +564,7 @@ st.markdown(hero_html, unsafe_allow_html=True)
 # =====================================================
 
 st.markdown(
-    "<div class='section-title'>🔥 Trending & Recommended</div>",
+    "<div class='section-title'>🔥 Trending & Recommended Movies</div>",
     unsafe_allow_html=True
 )
 

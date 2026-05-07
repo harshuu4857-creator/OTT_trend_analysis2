@@ -159,6 +159,20 @@ def load_data():
 movies = load_data()
 
 # =====================================================
+# ALL GENRES
+# =====================================================
+
+all_genres = sorted(
+    set(
+        " ".join(
+            movies['genres'].apply(
+                lambda x:" ".join(x)
+            )
+        ).split()
+    )
+)
+
+# =====================================================
 # CSS
 # =====================================================
 
@@ -226,20 +240,6 @@ section[data-testid="stSidebar"] {
 
 .stat-label {
     color:#999999;
-}
-
-/* FILTER BOX */
-
-.filter-container{
-    background:linear-gradient(
-        145deg,
-        rgba(18,18,18,0.95),
-        rgba(10,10,10,0.92)
-    );
-
-    padding:30px;
-    border-radius:24px;
-    margin-bottom:30px;
 }
 
 /* HERO */
@@ -387,18 +387,6 @@ with st.sidebar:
 # NAVBAR
 # =====================================================
 
-total_movies = len(movies)
-
-all_genres = sorted(
-    set(
-        " ".join(
-            movies['genres'].apply(
-                lambda x:" ".join(x)
-            )
-        ).split()
-    )
-)
-
 st.markdown(f"""
 <div class="navbar">
 
@@ -415,7 +403,7 @@ Created by Harsh Patel
 <div class="stats">
 
 <div class="stat-box">
-<div class="stat-number">{total_movies}</div>
+<div class="stat-number">{len(movies)}</div>
 <div class="stat-label">Movies</div>
 </div>
 
@@ -435,16 +423,9 @@ Created by Harsh Patel
 
 if page == "🎯 Prediction":
 
-    st.markdown("""
-    <div class="filter-container">
-    </div>
-    """, unsafe_allow_html=True)
+    # FILTERS
 
     col1, col2, col3, col4 = st.columns([2.8,1,1,1.4])
-
-    # =====================================================
-    # GENRES
-    # =====================================================
 
     with col1:
 
@@ -454,10 +435,6 @@ if page == "🎯 Prediction":
             placeholder="Choose genres..."
         )
 
-    # =====================================================
-    # YEAR
-    # =====================================================
-
     with col2:
 
         year = st.slider(
@@ -466,10 +443,6 @@ if page == "🎯 Prediction":
             2020,
             2015
         )
-
-    # =====================================================
-    # RATING
-    # =====================================================
 
     with col3:
 
@@ -481,10 +454,6 @@ if page == "🎯 Prediction":
             0.1
         )
 
-    # =====================================================
-    # SEARCH
-    # =====================================================
-
     with col4:
 
         search = st.text_input(
@@ -494,18 +463,14 @@ if page == "🎯 Prediction":
 
     discover = st.button("🚀 Discover Movies")
 
-    # =====================================================
     # DEFAULT MOVIE
-    # =====================================================
 
     default_movie = movies.sort_values(
         by='vote_average',
         ascending=False
     ).iloc[0]
 
-    # =====================================================
     # FILTERING
-    # =====================================================
 
     if discover and selected_genres:
 
@@ -536,29 +501,37 @@ if page == "🎯 Prediction":
                 )
             ]
 
-        vectors_filtered = cv.transform(
-            filtered['tags']
-        ).toarray()
+        if len(filtered) > 0:
 
-        years_filtered = filtered['year'].values.reshape(-1,1)
+            vectors_filtered = cv.transform(
+                filtered['tags']
+            ).toarray()
 
-        X_filtered = np.concatenate(
-            (vectors_filtered, years_filtered),
-            axis=1
-        )
+            years_filtered = filtered['year'].values.reshape(-1,1)
 
-        filtered['predicted_rating'] = model.predict(
-            X_filtered
-        )
+            X_filtered = np.concatenate(
+                (vectors_filtered, years_filtered),
+                axis=1
+            )
 
-        top_movies = filtered.sort_values(
-            by='predicted_rating',
-            ascending=False
-        ).head(10)
+            filtered['predicted_rating'] = model.predict(
+                X_filtered
+            )
 
-        if len(top_movies) > 0:
+            top_movies = filtered.sort_values(
+                by='predicted_rating',
+                ascending=False
+            ).head(10)
+
             hero_movie = top_movies.iloc[0]
+
         else:
+
+            top_movies = movies.sort_values(
+                by='vote_average',
+                ascending=False
+            ).head(10)
+
             hero_movie = default_movie
 
     else:
@@ -570,9 +543,7 @@ if page == "🎯 Prediction":
 
         hero_movie = default_movie
 
-    # =====================================================
     # HERO SECTION
-    # =====================================================
 
     hero_poster = fetch_poster(hero_movie['title'])
 
@@ -609,9 +580,7 @@ if page == "🎯 Prediction":
     </div>
     """, unsafe_allow_html=True)
 
-    # =====================================================
-    # MOVIE CARDS
-    # =====================================================
+    # MOVIES
 
     st.markdown(
         "<div class='section-title'>🔥 Trending & Recommended Movies</div>",
@@ -682,7 +651,7 @@ elif page == "🎬 All Movies":
         unsafe_allow_html=True
     )
 
-    # KPI ROW
+    # KPI
 
     k1, k2, k3, k4 = st.columns(4)
 
@@ -787,7 +756,7 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # DATAFRAME
+    # TABLE
 
     st.markdown(
         "<div class='section-title'>📊 Complete Dataset</div>",

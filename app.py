@@ -440,41 +440,57 @@ if page == "🎯 Prediction":
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4 = st.columns([2.5,1,1,1])
+    col1, col2, col3, col4 = st.columns([2.8,1,1,1.4])
 
-    with col1:
+# =====================================================
+# GENRES
+# =====================================================
 
-        selected_genres = st.multiselect(
-            "🎭 Genres",
-            all_genres,
-            placeholder="Choose genres..."
-        )
+with col1:
 
-    with col2:
+    selected_genres = st.multiselect(
+        "🎭 Genres",
+        all_genres,
+        placeholder="Choose genres..."
+    )
 
-        year = st.slider(
-            "📅 Year",
-            1980,
-            2020,
-            2015
-        )
+# =====================================================
+# YEAR
+# =====================================================
 
-    with col3:
+with col2:
 
-        search = st.text_input(
-            "🔍 Search",
-            placeholder="Search movie"
-        )
+    year = st.slider(
+        "📅 Year",
+        1980,
+        2020,
+        2015
+    )
 
-    with col4:
+# =====================================================
+# RATING
+# =====================================================
 
-        min_rating = st.slider(
-            "⭐ Rating",
-            0.0,
-            10.0,
-            7.0,
-            0.1
-        )
+with col3:
+
+    min_rating = st.slider(
+        "⭐ Rating",
+        0.0,
+        10.0,
+        7.0,
+        0.1
+    )
+
+# =====================================================
+# SEARCH
+# =====================================================
+
+with col4:
+
+    search = st.text_input(
+        "🔍 Search",
+        placeholder="Search movie..."
+    )
 
     discover = st.button("🚀 Discover Movies")
 

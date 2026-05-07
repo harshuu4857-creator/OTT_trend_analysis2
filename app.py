@@ -174,14 +174,15 @@ html, body, [class*="css"] {
 }
 
 .main-title {
-    font-size: 75px;
+    font-size: 45px;
     font-weight: 900;
     color: white;
+    margin-top: 10px;
 }
 
 .subtitle {
     color: #aaaaaa;
-    font-size: 20px;
+    font-size: 18px;
     margin-bottom: 30px;
 }
 
@@ -271,16 +272,70 @@ html, body, [class*="css"] {
     font-weight: bold;
 }
 
+[data-testid="stMetric"] {
+    background-color: #141414;
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# HEADER
+# TOP BAR STATS
+# =====================================================
+
+total_movies = len(movies)
+
+all_genres_count = len(
+    set(
+        " ".join(
+            movies['genres'].apply(
+                lambda x:" ".join(x)
+            )
+        ).split()
+    )
+)
+
+top1, top2, top3, top4 = st.columns([2,1,1,2])
+
+with top1:
+
+    st.markdown("""
+    <div class='main-title'>
+    NETFLIX AI
+    </div>
+    """, unsafe_allow_html=True)
+
+with top2:
+
+    st.metric(
+        label="🎬 Movies",
+        value=f"{total_movies:,}"
+    )
+
+with top3:
+
+    st.metric(
+        label="🎭 Genres",
+        value=all_genres_count
+    )
+
+with top4:
+
+    search = st.text_input(
+        "",
+        placeholder="🔍 Search Movie",
+        label_visibility="collapsed"
+    )
+
+# =====================================================
+# SUBTITLE
 # =====================================================
 st.markdown("""
-<div class='main-title'>NETFLIX AI</div>
 <div class='subtitle'>
-AI Powered Movie Recommendation System
+AI Powered OTT Trend Analysis & Recommendation System
 </div>
 """, unsafe_allow_html=True)
 
@@ -315,11 +370,6 @@ with col2:
         2015
     )
 
-search = st.text_input(
-    "🔍 Search Movie",
-    placeholder="Search movies like Interstellar..."
-)
-
 # =====================================================
 # BUTTON
 # =====================================================
@@ -344,6 +394,7 @@ if st.button("🎬 Discover Movies"):
             )
         ].copy()
 
+        # SEARCH FILTER
         if search:
 
             filtered = filtered[
@@ -354,6 +405,7 @@ if st.button("🎬 Discover Movies"):
                 )
             ]
 
+        # VECTORIZE
         vectors_filtered = cv.transform(
             filtered['tags']
         ).toarray()
@@ -365,19 +417,22 @@ if st.button("🎬 Discover Movies"):
             axis=1
         )
 
+        # PREDICTION
         filtered['predicted_rating'] = model.predict(
             X_filtered
         )
 
+        # SORT
         top_movies = filtered.sort_values(
             by='predicted_rating',
             ascending=False
         ).head(10)
 
-        # HERO
+        # HERO MOVIE
         hero_movie = top_movies.iloc[0]
         hero_poster = fetch_poster(hero_movie['title'])
 
+        # HERO SECTION
         hero_html = f"""
         <div class="hero-container"
         style="
@@ -413,11 +468,13 @@ if st.button("🎬 Discover Movies"):
 
         st.markdown(hero_html, unsafe_allow_html=True)
 
+        # SECTION TITLE
         st.markdown(
             "<div class='section-title'>🔥 Recommended For You</div>",
             unsafe_allow_html=True
         )
 
+        # MOVIE GRID
         cols = st.columns(5)
 
         for i, row in enumerate(top_movies.itertuples()):

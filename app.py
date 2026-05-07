@@ -2,15 +2,21 @@
 # ALL MOVIES PAGE
 # =====================================================
 
-elif page == "🎬 All Movies":
+if page == "🎬 All Movies":
+
+    import plotly.express as px
 
     st.markdown(
-        "<div class='section-title'>🎬 OTT Dataset Analytics Dashboard</div>",
+        """
+        <div class='section-title'>
+        🎬 OTT Dataset Analytics Dashboard
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
     # =====================================================
-    # KPI ROW
+    # KPI CARDS
     # =====================================================
 
     k1, k2, k3, k4 = st.columns(4)
@@ -23,14 +29,14 @@ elif page == "🎬 All Movies":
 
     with k2:
         st.metric(
-            "⭐ Avg Rating",
-            round(movies['vote_average'].mean(),2)
+            "⭐ Average Rating",
+            round(movies['vote_average'].mean(), 2)
         )
 
     with k3:
         st.metric(
             "🔥 Avg Popularity",
-            round(movies['popularity'].mean(),2)
+            round(movies['popularity'].mean(), 2)
         )
 
     with k4:
@@ -42,14 +48,9 @@ elif page == "🎬 All Movies":
     st.divider()
 
     # =====================================================
-    # CHARTS
-    # =====================================================
-
-    import plotly.express as px
-
-    # ---------------------------
+    # GRAPH 1
     # TOP LANGUAGES
-    # ---------------------------
+    # =====================================================
 
     lang_df = (
         movies['original_language']
@@ -58,13 +59,16 @@ elif page == "🎬 All Movies":
         .reset_index()
     )
 
-    lang_df.columns = ['Language', 'Movies']
+    lang_df.columns = [
+        'Language',
+        'Movies'
+    ]
 
     fig1 = px.bar(
         lang_df,
         x='Language',
         y='Movies',
-        title='Top Languages in Dataset'
+        title='Top Languages in OTT Dataset'
     )
 
     st.plotly_chart(
@@ -72,9 +76,10 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # ---------------------------
-    # MOVIES BY YEAR
-    # ---------------------------
+    # =====================================================
+    # GRAPH 2
+    # MOVIES RELEASED BY YEAR
+    # =====================================================
 
     year_df = (
         movies['year']
@@ -83,7 +88,10 @@ elif page == "🎬 All Movies":
         .reset_index()
     )
 
-    year_df.columns = ['Year', 'Movies']
+    year_df.columns = [
+        'Year',
+        'Movies'
+    ]
 
     fig2 = px.line(
         year_df,
@@ -97,9 +105,10 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # ---------------------------
+    # =====================================================
+    # GRAPH 3
     # RATING DISTRIBUTION
-    # ---------------------------
+    # =====================================================
 
     fig3 = px.histogram(
         movies,
@@ -113,9 +122,10 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # ---------------------------
+    # =====================================================
+    # GRAPH 4
     # POPULARITY VS RATING
-    # ---------------------------
+    # =====================================================
 
     fig4 = px.scatter(
         movies,
@@ -130,9 +140,10 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # ---------------------------
-    # BUDGET ANALYSIS
-    # ---------------------------
+    # =====================================================
+    # GRAPH 5
+    # TOP BUDGET MOVIES
+    # =====================================================
 
     top_budget = movies.sort_values(
         by='budget',
@@ -152,11 +163,15 @@ elif page == "🎬 All Movies":
     )
 
     # =====================================================
-    # DATASET TABLE
+    # DATAFRAME
     # =====================================================
 
     st.markdown(
-        "<div class='section-title'>📊 Complete Movie Dataset</div>",
+        """
+        <div class='section-title'>
+        📊 Complete Movie Dataset
+        </div>
+        """,
         unsafe_allow_html=True
     )
 

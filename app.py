@@ -81,7 +81,6 @@ def load_data():
 
     movies.dropna(inplace=True)
 
-    # YEAR
     movies['year'] = movies['release_date'].apply(
         lambda x: int(x.split("-")[0])
     )
@@ -174,6 +173,22 @@ html, body, [class*="css"] {
     font-family: sans-serif;
 }
 
+/* SIDEBAR */
+
+section[data-testid="stSidebar"] {
+    background-color: #0f0f0f;
+    border-right: 1px solid #1f1f1f;
+}
+
+.sidebar-title {
+    font-size:30px;
+    font-weight:900;
+    color:#E50914;
+    margin-bottom:20px;
+}
+
+/* MAIN */
+
 .block-container {
     padding-top: 1rem;
     padding-left: 2rem;
@@ -201,7 +216,6 @@ html, body, [class*="css"] {
     font-size:42px;
     font-weight:900;
     color:#E50914;
-    line-height:1;
 }
 
 .logo-sub {
@@ -358,6 +372,25 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # =====================================================
+# SIDEBAR
+# =====================================================
+
+with st.sidebar:
+
+    st.markdown(
+        "<div class='sidebar-title'>OTT AI</div>",
+        unsafe_allow_html=True
+    )
+
+    page = st.radio(
+        "Navigation",
+        [
+            "🎯 Prediction",
+            "🎬 All Movies"
+        ]
+    )
+
+# =====================================================
 # NAVBAR
 # =====================================================
 
@@ -406,235 +439,249 @@ Created by Harsh Patel
 """, unsafe_allow_html=True)
 
 # =====================================================
-# FILTERS
+# PREDICTION PAGE
 # =====================================================
 
-all_genres = sorted(
-    set(
-        " ".join(
-            movies['genres'].apply(
-                lambda x:" ".join(x)
-            )
-        ).split()
-    )
-)
+if page == "🎯 Prediction":
 
-st.markdown("<div class='filter-box'>", unsafe_allow_html=True)
-
-col1, col2, col3, col4 = st.columns([2.2,1,1,1])
-
-with col1:
-
-    selected_genres = st.multiselect(
-        "🎭 Select Genres",
-        all_genres
-    )
-
-with col2:
-
-    year = st.slider(
-        "📅 Year",
-        1980,
-        2020,
-        2015
-    )
-
-with col3:
-
-    search = st.text_input(
-        "🔍 Search",
-        placeholder="Search Movie"
-    )
-
-with col4:
-
-    min_rating = st.slider(
-        "⭐ Rating",
-        0.0,
-        10.0,
-        7.0,
-        0.1
-    )
-
-discover = st.button("🎬 Discover Movies")
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# =====================================================
-# DEFAULT HERO
-# =====================================================
-
-default_movie = movies.sort_values(
-    by='vote_average',
-    ascending=False
-).iloc[0]
-
-# =====================================================
-# RESULTS
-# =====================================================
-
-if discover and selected_genres:
-
-    filtered = movies[
-        (
-            movies['genres'].astype(str).str.contains(
-                selected_genres[0],
-                case=False
-            )
+    all_genres = sorted(
+        set(
+            " ".join(
+                movies['genres'].apply(
+                    lambda x:" ".join(x)
+                )
+            ).split()
         )
-        &
-        (
-            abs(movies['year'] - year) <= 5
-        )
-        &
-        (
-            movies['vote_average'] >= min_rating
-        )
-    ].copy()
-
-    if search:
-
-        filtered = filtered[
-            filtered['title'].str.contains(
-                search,
-                case=False,
-                na=False
-            )
-        ]
-
-    vectors_filtered = cv.transform(
-        filtered['tags']
-    ).toarray()
-
-    years_filtered = filtered['year'].values.reshape(-1,1)
-
-    X_filtered = np.concatenate(
-        (vectors_filtered, years_filtered),
-        axis=1
     )
 
-    filtered['predicted_rating'] = model.predict(
-        X_filtered
-    )
+    st.markdown("<div class='filter-box'>", unsafe_allow_html=True)
 
-    top_movies = filtered.sort_values(
-        by='predicted_rating',
-        ascending=False
-    ).head(10)
+    col1, col2, col3, col4 = st.columns([2.2,1,1,1])
 
-    hero_movie = top_movies.iloc[0]
+    with col1:
 
-else:
+        selected_genres = st.multiselect(
+            "🎭 Select Genres",
+            all_genres
+        )
 
-    top_movies = movies.sort_values(
+    with col2:
+
+        year = st.slider(
+            "📅 Year",
+            1980,
+            2020,
+            2015
+        )
+
+    with col3:
+
+        search = st.text_input(
+            "🔍 Search",
+            placeholder="Search Movie"
+        )
+
+    with col4:
+
+        min_rating = st.slider(
+            "⭐ Rating",
+            0.0,
+            10.0,
+            7.0,
+            0.1
+        )
+
+    discover = st.button("🎬 Discover Movies")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    default_movie = movies.sort_values(
         by='vote_average',
         ascending=False
-    ).head(10)
+    ).iloc[0]
 
-    hero_movie = default_movie
+    if discover and selected_genres:
+
+        filtered = movies[
+            (
+                movies['genres'].astype(str).str.contains(
+                    selected_genres[0],
+                    case=False
+                )
+            )
+            &
+            (
+                abs(movies['year'] - year) <= 5
+            )
+            &
+            (
+                movies['vote_average'] >= min_rating
+            )
+        ].copy()
+
+        if search:
+
+            filtered = filtered[
+                filtered['title'].str.contains(
+                    search,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        vectors_filtered = cv.transform(
+            filtered['tags']
+        ).toarray()
+
+        years_filtered = filtered['year'].values.reshape(-1,1)
+
+        X_filtered = np.concatenate(
+            (vectors_filtered, years_filtered),
+            axis=1
+        )
+
+        filtered['predicted_rating'] = model.predict(
+            X_filtered
+        )
+
+        top_movies = filtered.sort_values(
+            by='predicted_rating',
+            ascending=False
+        ).head(10)
+
+        hero_movie = top_movies.iloc[0]
+
+    else:
+
+        top_movies = movies.sort_values(
+            by='vote_average',
+            ascending=False
+        ).head(10)
+
+        hero_movie = default_movie
+
+    # HERO
+    hero_poster = fetch_poster(hero_movie['title'])
+
+    hero_html = f"""
+    <div class="hero-container"
+    style="
+    background-image:
+    linear-gradient(
+    to right,
+    rgba(0,0,0,0.96),
+    rgba(0,0,0,0.3)),
+    url('{hero_poster}');
+    ">
+
+    <div class="hero-overlay"></div>
+
+    <div class="hero-content">
+
+    <div class="hero-title">
+    {hero_movie['title']}
+    </div>
+
+    <div class="hero-rating">
+    ⭐ {round(hero_movie['vote_average'],2)}
+    </div>
+
+    <div class="hero-desc">
+    AI powered OTT trend analysis and intelligent movie recommendation system using machine learning and audience trends.
+    </div>
+
+    </div>
+
+    </div>
+    """
+
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+    st.markdown(
+        "<div class='section-title'>🔥 Trending & Recommended Movies</div>",
+        unsafe_allow_html=True
+    )
+
+    cols = st.columns(5)
+
+    for i, row in enumerate(top_movies.itertuples()):
+
+        with cols[i % 5]:
+
+            poster = fetch_poster(row.title)
+
+            st.markdown(
+                "<div class='movie-card'>",
+                unsafe_allow_html=True
+            )
+
+            st.image(
+                poster,
+                use_container_width=True
+            )
+
+            st.markdown(
+                f"<div class='movie-name'>{row.title}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='movie-info'>📅 Year: {row.year}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                "</div>",
+                unsafe_allow_html=True
+            )
 
 # =====================================================
-# HERO SECTION
+# ALL MOVIES PAGE
 # =====================================================
 
-hero_poster = fetch_poster(hero_movie['title'])
+elif page == "🎬 All Movies":
 
-hero_html = f"""
-<div class="hero-container"
-style="
-background-image:
-linear-gradient(
-to right,
-rgba(0,0,0,0.96),
-rgba(0,0,0,0.3)),
-url('{hero_poster}');
-">
+    st.markdown(
+        "<div class='section-title'>🎬 All Movies Dataset</div>",
+        unsafe_allow_html=True
+    )
 
-<div class="hero-overlay"></div>
+    display_movies = movies[
+        [
+            'title',
+            'vote_average',
+            'popularity',
+            'original_language',
+            'budget',
+            'year'
+        ]
+    ].sort_values(
+        by='vote_average',
+        ascending=False
+    )
 
-<div class="hero-content">
-
-<div class="hero-title">
-{hero_movie['title']}
-</div>
-
-<div class="hero-rating">
-⭐ {round(hero_movie['vote_average'],2)}
-</div>
-
-<div class="hero-desc">
-AI powered OTT trend analysis and intelligent movie recommendation system using machine learning, genre analysis, popularity trends and audience insights.
-</div>
-
-</div>
-
-</div>
-"""
-
-st.markdown(hero_html, unsafe_allow_html=True)
-
-# =====================================================
-# SECTION TITLE
-# =====================================================
-
-st.markdown(
-    "<div class='section-title'>🔥 Trending & Recommended Movies</div>",
-    unsafe_allow_html=True
-)
-
-# =====================================================
-# MOVIE GRID
-# =====================================================
-
-cols = st.columns(5)
-
-for i, row in enumerate(top_movies.itertuples()):
-
-    with cols[i % 5]:
-
-        poster = fetch_poster(row.title)
-
-        st.markdown(
-            "<div class='movie-card'>",
-            unsafe_allow_html=True
-        )
-
-        st.image(
-            poster,
-            use_container_width=True
-        )
-
-        st.markdown(
-            f"<div class='movie-name'>{row.title}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div class='movie-info'>📅 Year: {row.year}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+    st.dataframe(
+        display_movies,
+        use_container_width=True,
+        height=700
+    )

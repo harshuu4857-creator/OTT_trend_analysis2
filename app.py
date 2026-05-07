@@ -1,16 +1,10 @@
-# =====================================================
-# OTT TREND ANALYSIS - FINAL WORKING APP.PY
-# =====================================================
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-import ast
 import requests
-import plotly.express as px
-
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.ensemble import RandomForestRegressor
+import ast
+import matplotlib.pyplot as plt
+import joblib
 
 # =====================================================
 # PAGE CONFIG
@@ -18,9 +12,116 @@ from sklearn.ensemble import RandomForestRegressor
 
 st.set_page_config(
     page_title="OTT Trend Analysis",
-    layout="wide",
-    page_icon="🎬"
+    layout="wide"
 )
+
+# =====================================================
+# CACHE DATA
+# =====================================================
+
+@st.cache_data
+def load_data():
+
+    movies = pd.read_csv("tmdb_5000_movies.csv")
+    credits = pd.read_csv("tmdb_5000_credits.csv")
+
+    movies = movies.merge(credits, on="title")
+
+    return movies
+
+movies = load_data()
+
+# =====================================================
+# LOAD MODEL + VECTORIZER
+# =====================================================
+
+model = joblib.load("movie_model.pkl")
+cv = joblib.load("vectorizer.pkl")
+
+# =====================================================
+# DATA CLEANING
+# =====================================================
+
+movies = movies[
+    [
+        'title',
+        'genres',
+        'overview',
+        'release_date',
+        'vote_average',
+        'popularity',
+        'budget',
+        'runtime',
+        'original_language',
+        'cast',
+        'crew'
+    ]
+]
+
+movies.dropna(inplace=True)
+
+movies['year'] = movies['release_date'].apply(
+    lambda x: int(x.split("-")[0])
+)
+
+# =====================================================
+# GENRE CONVERT
+# =====================================================
+
+def convert(obj):
+
+    L = []
+
+    for i in ast.literal_eval(obj):
+        L.append(i['name'])
+
+    return L
+
+movies['genres'] = movies['genres'].apply(convert)
+
+movies['genres_text'] = movies['genres'].apply(
+    lambda x: " ".join(x)
+)
+
+# =====================================================
+# DIRECTOR
+# =====================================================
+
+def fetch_director(obj):
+
+    L = []
+
+    for i in ast.literal_eval(obj):
+
+        if i['job'] == 'Director':
+            L.append(i['name'])
+
+    return ", ".join(L)
+
+movies['director'] = movies['crew'].apply(fetch_director)
+
+# =====================================================
+# CAST
+# =====================================================
+
+def fetch_cast(obj):
+
+    L = []
+
+    counter = 0
+
+    for i in ast.literal_eval(obj):
+
+        if counter != 3:
+            L.append(i['name'])
+            counter += 1
+
+        else:
+            break
+
+    return ", ".join(L)
+
+movies['cast_names'] = movies['cast'].apply(fetch_cast)
 
 # =====================================================
 # TMDB API
@@ -29,7 +130,7 @@ st.set_page_config(
 TMDB_API_KEY = "5609ab5a9c50d7e2e03b53ff1e36401a"
 
 # =====================================================
-# FETCH POSTER
+# POSTER CACHE
 # =====================================================
 
 @st.cache_data
@@ -46,156 +147,17 @@ def fetch_poster(movie_name):
             poster_path = data['results'][0]['poster_path']
 
             if poster_path:
-                return "https://image.tmdb.org/t/p/w500" + poster_path
+
+                return (
+                    "https://image.tmdb.org/t/p/w500"
+                    + poster_path
+                )
 
         return "https://via.placeholder.com/500x750?text=No+Image"
 
     except:
+
         return "https://via.placeholder.com/500x750?text=Error"
-
-# =====================================================
-# LOAD DATA
-# =====================================================
-
-@st.cache_data
-def load_data():
-
-    movies = pd.read_csv("tmdb_5000_movies.csv")
-    credits = pd.read_csv("tmdb_5000_credits.csv")
-
-    movies = movies.merge(credits, on='title')
-
-    movies = movies[
-        [
-            'title',
-            'genres',
-            'cast',
-            'crew',
-            'release_date',
-            'vote_average',
-            'budget',
-            'original_language',
-            'popularity'
-        ]
-    ]
-
-    movies.dropna(inplace=True)
-
-    movies['year'] = movies['release_date'].apply(
-        lambda x: int(x.split("-")[0])
-    )
-
-    # ==========================================
-    # CONVERT FUNCTIONS
-    # ==========================================
-
-    def convert(obj):
-
-        L = []
-
-        for i in ast.literal_eval(obj):
-            L.append(i['name'])
-
-        return L
-
-    def get_cast(obj):
-
-        L = []
-
-        counter = 0
-
-        for i in ast.literal_eval(obj):
-
-            if counter != 3:
-                L.append(i['name'])
-                counter += 1
-
-            else:
-                break
-
-        return L
-
-    def fetch_director(obj):
-
-        L = []
-
-        for i in ast.literal_eval(obj):
-
-            if i['job'] == 'Director':
-                L.append(i['name'])
-                break
-
-        return L
-
-    movies['genres'] = movies['genres'].apply(convert)
-    movies['cast'] = movies['cast'].apply(get_cast)
-    movies['crew'] = movies['crew'].apply(fetch_director)
-
-    movies['genres'] = movies['genres'].apply(
-        lambda x:[i.replace(" ","") for i in x]
-    )
-
-    movies['cast'] = movies['cast'].apply(
-        lambda x:[i.replace(" ","") for i in x]
-    )
-
-    movies['crew'] = movies['crew'].apply(
-        lambda x:[i.replace(" ","") for i in x]
-    )
-
-    movies['tags'] = (
-        movies['genres'] +
-        movies['cast'] +
-        movies['crew']
-    )
-
-    movies['tags'] = movies['tags'].apply(
-        lambda x:" ".join(x)
-    )
-
-    return movies
-
-movies = load_data()
-
-# =====================================================
-# TRAIN MODEL INSIDE APP
-# =====================================================
-
-cv = CountVectorizer(max_features=5000)
-
-vectors = cv.fit_transform(
-    movies['tags']
-).toarray()
-
-year_feature = movies['year'].values.reshape(-1,1)
-
-X = np.concatenate(
-    (vectors, year_feature),
-    axis=1
-)
-
-y = movies['vote_average']
-
-model = RandomForestRegressor(
-    n_estimators=100,
-    random_state=42
-)
-
-model.fit(X, y)
-
-# =====================================================
-# GENRES
-# =====================================================
-
-all_genres = sorted(
-    set(
-        " ".join(
-            movies['genres'].apply(
-                lambda x:" ".join(x)
-            )
-        ).split()
-    )
-)
 
 # =====================================================
 # CSS
@@ -204,175 +166,66 @@ all_genres = sorted(
 st.markdown("""
 <style>
 
-html, body, [class*="css"]{
-    background:#050816;
-    color:white;
-    font-family:sans-serif;
+html, body, [class*="css"] {
+    background-color: #050816;
+    color: white;
+    font-family: sans-serif;
 }
 
-section[data-testid="stSidebar"]{
-    background:#0d0d0d;
+.block-container {
+    padding-top: 1rem;
 }
 
-.sidebar-title{
-    font-size:34px;
-    font-weight:900;
-    color:#E50914;
-    margin-bottom:25px;
+.title {
+    font-size: 60px;
+    font-weight: 900;
+    color: #ff1e2d;
 }
 
-.navbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#0f0f0f;
-    padding:24px;
-    border-radius:22px;
-    margin-bottom:30px;
+.subtitle {
+    color: #bbbbbb;
+    font-size: 18px;
 }
 
-.logo-title{
-    font-size:42px;
-    font-weight:900;
-    color:#E50914;
+.metric-box {
+    background: #111111;
+    padding: 20px;
+    border-radius: 20px;
+    text-align: center;
 }
 
-.logo-sub{
-    color:#aaaaaa;
-    margin-top:5px;
+.movie-card {
+    background: #111111;
+    padding: 12px;
+    border-radius: 20px;
+    transition: 0.3s;
+    margin-bottom: 20px;
 }
 
-.stats{
-    display:flex;
-    gap:15px;
+.movie-card:hover {
+    transform: scale(1.03);
 }
 
-.stat-box{
-    background:#181818;
-    padding:16px 22px;
-    border-radius:16px;
-    text-align:center;
+.movie-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 10px;
 }
 
-.stat-number{
-    font-size:28px;
-    font-weight:bold;
+.movie-info {
+    color: #cccccc;
+    margin-top: 5px;
+    font-size: 14px;
 }
 
-.stat-label{
-    color:#aaaaaa;
-}
-
-.filter-box{
-    background:#0f0f0f;
-    padding:22px;
-    border-radius:24px;
-    margin-bottom:25px;
-}
-
-.hero-container{
-    position:relative;
-    height:620px;
-    border-radius:28px;
-    overflow:hidden;
-    background-size:cover;
-    background-position:center;
-    margin-top:20px;
-    margin-bottom:40px;
-}
-
-.hero-overlay{
-    position:absolute;
-    inset:0;
-    background:linear-gradient(
-        to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.2)
-    );
-}
-
-.hero-content{
-    position:absolute;
-    left:60px;
-    bottom:60px;
-    width:45%;
-    z-index:2;
-}
-
-.hero-title{
-    font-size:72px;
-    font-weight:900;
-    line-height:1;
-}
-
-.hero-rating{
-    font-size:30px;
-    color:#E50914;
-    font-weight:bold;
-    margin-top:20px;
-}
-
-.hero-desc{
-    margin-top:18px;
-    color:#dddddd;
-    font-size:18px;
-    line-height:1.7;
-}
-
-.section-title{
-    font-size:34px;
-    font-weight:800;
-    margin-bottom:25px;
-}
-
-.movie-card{
-    background:#141414;
-    border-radius:18px;
-    padding:10px;
-    margin-bottom:20px;
-    transition:0.4s;
-}
-
-.movie-card:hover{
-    transform:scale(1.04);
-}
-
-.movie-name{
-    font-size:18px;
-    font-weight:700;
-    margin-top:10px;
-}
-
-.movie-info{
-    color:#d0d0d0;
-    font-size:14px;
-    margin-top:5px;
-}
-
-.stButton > button{
-    width:100%;
-    height:58px;
-    background:linear-gradient(
-        90deg,
-        #E50914,
-        #ff4d4d
-    );
-    color:white;
-    border:none;
-    border-radius:16px;
-    font-size:18px;
-    font-weight:bold;
-}
-
-.stTextInput input{
-    background:#181818 !important;
-    color:white !important;
-    border-radius:14px !important;
-}
-
-.stMultiSelect div[data-baseweb="select"]{
-    background:#181818 !important;
-    border-radius:14px !important;
+.stButton > button {
+    background: #ff1e2d;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: bold;
 }
 
 </style>
@@ -382,71 +235,185 @@ section[data-testid="stSidebar"]{
 # SIDEBAR
 # =====================================================
 
-with st.sidebar:
+st.sidebar.title("🎬 OTT AI")
 
-    st.markdown(
-        "<div class='sidebar-title'>OTT AI</div>",
-        unsafe_allow_html=True
-    )
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "Prediction",
+        "All Movies"
+    ]
+)
 
-    page = st.radio(
-        "Navigation",
-        [
-            "🎯 Prediction",
-            "🎬 All Movies"
+# =====================================================
+# ALL MOVIES PAGE
+# =====================================================
+
+if page == "All Movies":
+
+    st.title("📊 OTT Analytics Dashboard")
+
+    st.dataframe(
+        movies[
+            [
+                'title',
+                'vote_average',
+                'popularity',
+                'original_language',
+                'budget',
+                'year'
+            ]
         ]
     )
 
-# =====================================================
-# NAVBAR
-# =====================================================
+    st.markdown("---")
 
-st.markdown(f"""
-<div class="navbar">
+    st.subheader("📈 OTT Trend Insights")
 
-<div>
+    col1, col2, col3 = st.columns(3)
 
-<div class="logo-title">
-OTT Trend Analysis
-</div>
+    genre_count = movies['genres'].explode().value_counts()
 
-<div class="logo-sub">
-Created by Harsh Patel
-</div>
+    with col1:
 
-</div>
+        st.metric(
+            "🔥 Most Popular Genre",
+            genre_count.index[0]
+        )
 
-<div class="stats">
+    with col2:
 
-<div class="stat-box">
-<div class="stat-number">{len(movies)}</div>
-<div class="stat-label">Movies</div>
-</div>
+        st.metric(
+            "🌍 Top Language",
+            movies['original_language'].mode()[0]
+        )
 
-<div class="stat-box">
-<div class="stat-number">{len(all_genres)}</div>
-<div class="stat-label">Genres</div>
-</div>
+    best_year = movies.groupby(
+        'year'
+    )['vote_average'].mean().idxmax()
 
-</div>
+    with col3:
 
-</div>
-""", unsafe_allow_html=True)
+        st.metric(
+            "🏆 Highest Rated Year",
+            int(best_year)
+        )
+
+    st.markdown("---")
+
+    # =================================================
+    # GRAPH 1
+    # =================================================
+
+    st.subheader("⭐ Average Rating Trend")
+
+    rating_trend = movies.groupby(
+        'year'
+    )['vote_average'].mean()
+
+    fig, ax = plt.subplots(figsize=(10,4))
+
+    ax.plot(
+        rating_trend.index,
+        rating_trend.values
+    )
+
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Average Rating")
+
+    st.pyplot(fig)
+
+    # =================================================
+    # GRAPH 2
+    # =================================================
+
+    st.subheader("💰 Budget vs Popularity")
+
+    fig2, ax2 = plt.subplots(figsize=(10,4))
+
+    ax2.scatter(
+        movies['budget'],
+        movies['popularity']
+    )
+
+    ax2.set_xlabel("Budget")
+    ax2.set_ylabel("Popularity")
+
+    st.pyplot(fig2)
 
 # =====================================================
 # PREDICTION PAGE
 # =====================================================
 
-if page == "🎯 Prediction":
+if page == "Prediction":
 
-    st.markdown(
-        "<div class='filter-box'>",
-        unsafe_allow_html=True
-    )
+    # =================================================
+    # HEADER
+    # =================================================
 
-    col1, col2, col3, col4 = st.columns([2.5,1,1,1.2])
+    col1, col2, col3 = st.columns([6,1,1])
 
     with col1:
+
+        st.markdown(
+            "<div class='title'>OTT Trend Analysis</div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            "<div class='subtitle'>Created by Harsh Patel</div>",
+            unsafe_allow_html=True
+        )
+
+    with col2:
+
+        st.markdown(
+            f"""
+            <div class='metric-box'>
+            <h1>{movies.shape[0]}</h1>
+            Movies
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col3:
+
+        total_genres = len(
+            set(
+                " ".join(
+                    movies['genres_text']
+                ).split()
+            )
+        )
+
+        st.markdown(
+            f"""
+            <div class='metric-box'>
+            <h1>{total_genres}</h1>
+            Genres
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # =================================================
+    # FILTERS
+    # =================================================
+
+    c1, c2, c3, c4 = st.columns([3,1,1,2])
+
+    all_genres = sorted(
+        set(
+            " ".join(
+                movies['genres_text']
+            ).split()
+        )
+    )
+
+    with c1:
 
         selected_genres = st.multiselect(
             "🎭 Genres",
@@ -454,7 +421,7 @@ if page == "🎯 Prediction":
             placeholder="Choose genres..."
         )
 
-    with col2:
+    with c2:
 
         year = st.slider(
             "📅 Year",
@@ -463,333 +430,180 @@ if page == "🎯 Prediction":
             2015
         )
 
-    with col3:
+    with c3:
 
-        min_rating = st.slider(
+        rating = st.slider(
             "⭐ Rating",
-            0.0,
+            1.0,
             10.0,
-            7.0,
-            0.1
+            7.0
         )
 
-    with col4:
+    with c4:
 
         search = st.text_input(
             "🔍 Search",
             placeholder="Search movie"
         )
 
-    discover = st.button("🚀 Discover Movies")
+    show = st.button("🚀 Discover Movies")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # =================================================
+    # PREDICT
+    # =================================================
 
-    filtered = movies.copy()
+    if show:
 
-    # GENRE FILTER
+        filtered = movies.copy()
 
-    if len(selected_genres) > 0:
+        # =============================================
+        # GENRE FILTER
+        # =============================================
 
-        for genre in selected_genres:
+        if selected_genres:
+
+            for genre in selected_genres:
+
+                filtered = filtered[
+                    filtered['genres_text'].str.contains(
+                        genre,
+                        case=False
+                    )
+                ]
+
+        # =============================================
+        # YEAR FILTER
+        # =============================================
+
+        filtered = filtered[
+            abs(filtered['year'] - year) <= 5
+        ]
+
+        # =============================================
+        # RATING FILTER
+        # =============================================
+
+        filtered = filtered[
+            filtered['vote_average'] >= rating
+        ]
+
+        # =============================================
+        # SEARCH FILTER
+        # =============================================
+
+        if search:
 
             filtered = filtered[
-                filtered['genres'].astype(str).str.contains(
-                    genre,
+                filtered['title'].str.contains(
+                    search,
                     case=False
                 )
             ]
 
-    # YEAR FILTER
-
-    filtered = filtered[
-        abs(filtered['year'] - year) <= 5
-    ]
-
-    # RATING FILTER
-
-    filtered = filtered[
-        filtered['vote_average'] >= min_rating
-    ]
-
-    # SEARCH FILTER
-
-    if search:
-
-        filtered = filtered[
-            filtered['title'].str.contains(
-                search,
-                case=False,
-                na=False
-            )
-        ]
-
-    # EMPTY RESULT
-
-    if len(filtered) == 0:
-
-        filtered = movies.sort_values(
-            by='vote_average',
-            ascending=False
-        ).head(10)
-
-    # PREDICT
-
-    vectors_filtered = cv.transform(
-        filtered['tags']
-    ).toarray()
-
-    years_filtered = filtered['year'].values.reshape(-1,1)
-
-    X_filtered = np.concatenate(
-        (vectors_filtered, years_filtered),
-        axis=1
-    )
-
-    filtered['predicted_rating'] = model.predict(
-        X_filtered
-    )
-
-    top_movies = filtered.sort_values(
-        by='predicted_rating',
-        ascending=False
-    ).head(10)
-
-    hero_movie = top_movies.iloc[0]
-
-    hero_poster = fetch_poster(hero_movie['title'])
-
-    # HERO
-
-    st.markdown(f"""
-    <div class="hero-container"
-    style="
-    background-image:
-    linear-gradient(
-        to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.2)
-    ),
-    url('{hero_poster}');
-    ">
-
-    <div class="hero-overlay"></div>
-
-    <div class="hero-content">
-
-    <div class="hero-title">
-    {hero_movie['title']}
-    </div>
-
-    <div class="hero-rating">
-    ⭐ {round(hero_movie['vote_average'],2)}
-    </div>
-
-    <div class="hero-desc">
-    AI powered OTT trend analysis and intelligent recommendation system using machine learning and audience behaviour trends.
-    </div>
-
-    </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    # MOVIES
-
-    st.markdown(
-        "<div class='section-title'>🔥 Recommended Movies</div>",
-        unsafe_allow_html=True
-    )
-
-    cols = st.columns(5)
-
-    for i, row in enumerate(top_movies.itertuples()):
-
-        with cols[i % 5]:
-
-            poster = fetch_poster(row.title)
-
-            st.markdown(
-                "<div class='movie-card'>",
-                unsafe_allow_html=True
-            )
-
-            st.image(
-                poster,
-                use_container_width=True
-            )
-
-            st.markdown(
-                f"<div class='movie-name'>{row.title}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                f"<div class='movie-info'>⭐ Rating: {round(row.vote_average,2)}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                f"<div class='movie-info'>🔥 Popularity: {round(row.popularity,2)}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                f"<div class='movie-info'>🌍 Language: {row.original_language.upper()}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                f"<div class='movie-info'>💰 Budget: ${int(row.budget):,}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                f"<div class='movie-info'>📅 Year: {row.year}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown(
-                "</div>",
-                unsafe_allow_html=True
-            )
-
-# =====================================================
-# ALL MOVIES PAGE
-# =====================================================
-
-elif page == "🎬 All Movies":
-
-    st.markdown(
-        "<div class='section-title'>🎬 OTT Analytics Dashboard</div>",
-        unsafe_allow_html=True
-    )
-
-    k1, k2, k3, k4 = st.columns(4)
-
-    with k1:
-        st.metric(
-            "🎬 Movies",
-            len(movies)
-        )
-
-    with k2:
-        st.metric(
-            "⭐ Avg Rating",
-            round(movies['vote_average'].mean(),2)
-        )
-
-    with k3:
-        st.metric(
-            "🔥 Avg Popularity",
-            round(movies['popularity'].mean(),2)
-        )
-
-    with k4:
-        st.metric(
-            "🌍 Languages",
-            movies['original_language'].nunique()
-        )
-
-    st.divider()
-
-    # GRAPH 1
-
-    lang_df = (
-        movies['original_language']
-        .value_counts()
-        .head(10)
-        .reset_index()
-    )
-
-    lang_df.columns = ['Language', 'Movies']
-
-    fig1 = px.bar(
-        lang_df,
-        x='Language',
-        y='Movies',
-        title='Top Languages'
-    )
-
-    st.plotly_chart(
-        fig1,
-        use_container_width=True
-    )
-
-    # GRAPH 2
-
-    year_df = (
-        movies['year']
-        .value_counts()
-        .sort_index()
-        .reset_index()
-    )
-
-    year_df.columns = ['Year', 'Movies']
-
-    fig2 = px.line(
-        year_df,
-        x='Year',
-        y='Movies',
-        title='Movies Released Per Year'
-    )
-
-    st.plotly_chart(
-        fig2,
-        use_container_width=True
-    )
-
-    # GRAPH 3
-
-    fig3 = px.histogram(
-        movies,
-        x='vote_average',
-        nbins=20,
-        title='Rating Distribution'
-    )
-
-    st.plotly_chart(
-        fig3,
-        use_container_width=True
-    )
-
-    # GRAPH 4
-
-    fig4 = px.scatter(
-        movies,
-        x='popularity',
-        y='vote_average',
-        hover_name='title',
-        title='Popularity vs Rating'
-    )
-
-    st.plotly_chart(
-        fig4,
-        use_container_width=True
-    )
-
-    # DATAFRAME
-
-    st.markdown(
-        "<div class='section-title'>📊 Complete Dataset</div>",
-        unsafe_allow_html=True
-    )
-
-    display_movies = movies[
-        [
-            'title',
-            'vote_average',
-            'popularity',
-            'original_language',
-            'budget',
+        # =============================================
+        # PREDICTION
+        # =============================================
+
+        genre_vec_all = cv.transform(
+            filtered['genres_text']
+        ).toarray()
+
+        year_vec_all = filtered[
             'year'
-        ]
-    ].sort_values(
-        by='vote_average',
-        ascending=False
-    )
+        ].values.reshape(-1,1)
 
-    st.dataframe(
-        display_movies,
-        use_container_width=True,
-        height=700
-    )
+        X_all = np.concatenate(
+            (
+                genre_vec_all,
+                year_vec_all
+            ),
+            axis=1
+        )
+
+        filtered['predicted_rating'] = model.predict(X_all)
+
+        top_movies = filtered.sort_values(
+            by='predicted_rating',
+            ascending=False
+        ).head(8)
+
+        # =============================================
+        # RESULTS
+        # =============================================
+
+        st.markdown("---")
+
+        st.subheader("🔥 Recommended Movies")
+
+        cols = st.columns(4)
+
+        for i, row in top_movies.iterrows():
+
+            with cols[i % 4]:
+
+                poster = fetch_poster(row['title'])
+
+                st.markdown(
+                    "<div class='movie-card'>",
+                    unsafe_allow_html=True
+                )
+
+                st.image(
+                    poster,
+                    use_container_width=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-title'>{row['title']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>⭐ {round(row['vote_average'],1)}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>🌍 {row['original_language']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>🔥 Popularity: {round(row['popularity'],1)}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>💰 Budget: ${row['budget']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>🎬 Director: {row['director']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>🎭 Cast: {row['cast_names']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>📅 {row['year']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>⏱ {row['runtime']} min</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"<div class='movie-info'>{row['overview'][:180]}...</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
+                )

@@ -178,7 +178,7 @@ section[data-testid="stSidebar"] {
 }
 
 .sidebar-title {
-    font-size:30px;
+    font-size:32px;
     font-weight:900;
     color:#E50914;
     margin-bottom:20px;
@@ -192,7 +192,7 @@ section[data-testid="stSidebar"] {
     align-items:center;
     background:#0f0f0f;
     padding:22px;
-    border-radius:20px;
+    border-radius:22px;
     margin-bottom:30px;
 }
 
@@ -209,7 +209,7 @@ section[data-testid="stSidebar"] {
 
 .stats {
     display:flex;
-    gap:15px;
+    gap:16px;
 }
 
 .stat-box {
@@ -259,8 +259,8 @@ section[data-testid="stSidebar"] {
     inset:0;
     background:linear-gradient(
         to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.3)
+        rgba(0,0,0,0.96),
+        rgba(0,0,0,0.25)
     );
 }
 
@@ -273,7 +273,7 @@ section[data-testid="stSidebar"] {
 }
 
 .hero-title{
-    font-size:70px;
+    font-size:72px;
     font-weight:900;
     line-height:1;
 }
@@ -442,55 +442,55 @@ if page == "🎯 Prediction":
 
     col1, col2, col3, col4 = st.columns([2.8,1,1,1.4])
 
-# =====================================================
-# GENRES
-# =====================================================
+    # =====================================================
+    # GENRES
+    # =====================================================
 
-with col1:
+    with col1:
 
-    selected_genres = st.multiselect(
-        "🎭 Genres",
-        all_genres,
-        placeholder="Choose genres..."
-    )
+        selected_genres = st.multiselect(
+            "🎭 Genres",
+            all_genres,
+            placeholder="Choose genres..."
+        )
 
-# =====================================================
-# YEAR
-# =====================================================
+    # =====================================================
+    # YEAR
+    # =====================================================
 
-with col2:
+    with col2:
 
-    year = st.slider(
-        "📅 Year",
-        1980,
-        2020,
-        2015
-    )
+        year = st.slider(
+            "📅 Year",
+            1980,
+            2020,
+            2015
+        )
 
-# =====================================================
-# RATING
-# =====================================================
+    # =====================================================
+    # RATING
+    # =====================================================
 
-with col3:
+    with col3:
 
-    min_rating = st.slider(
-        "⭐ Rating",
-        0.0,
-        10.0,
-        7.0,
-        0.1
-    )
+        min_rating = st.slider(
+            "⭐ Rating",
+            0.0,
+            10.0,
+            7.0,
+            0.1
+        )
 
-# =====================================================
-# SEARCH
-# =====================================================
+    # =====================================================
+    # SEARCH
+    # =====================================================
 
-with col4:
+    with col4:
 
-    search = st.text_input(
-        "🔍 Search",
-        placeholder="Search movie..."
-    )
+        search = st.text_input(
+            "🔍 Search",
+            placeholder="Search movie..."
+        )
 
     discover = st.button("🚀 Discover Movies")
 
@@ -504,7 +504,7 @@ with col4:
     ).iloc[0]
 
     # =====================================================
-    # FILTER
+    # FILTERING
     # =====================================================
 
     if discover and selected_genres:
@@ -556,7 +556,10 @@ with col4:
             ascending=False
         ).head(10)
 
-        hero_movie = top_movies.iloc[0]
+        if len(top_movies) > 0:
+            hero_movie = top_movies.iloc[0]
+        else:
+            hero_movie = default_movie
 
     else:
 
@@ -579,8 +582,8 @@ with col4:
     background-image:
     linear-gradient(
         to right,
-        rgba(0,0,0,0.95),
-        rgba(0,0,0,0.2)
+        rgba(0,0,0,0.96),
+        rgba(0,0,0,0.25)
     ),
     url('{hero_poster}');
     ">
@@ -598,7 +601,7 @@ with col4:
     </div>
 
     <div class="hero-desc">
-    AI powered OTT trend analysis and premium recommendation engine using machine learning and movie popularity trends.
+    AI powered OTT trend analysis and intelligent recommendation system using machine learning and audience behaviour trends.
     </div>
 
     </div>
@@ -607,7 +610,7 @@ with col4:
     """, unsafe_allow_html=True)
 
     # =====================================================
-    # MOVIE ROW
+    # MOVIE CARDS
     # =====================================================
 
     st.markdown(

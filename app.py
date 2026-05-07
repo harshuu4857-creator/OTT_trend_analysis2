@@ -1,3 +1,7 @@
+# =====================================================
+# OTT TREND ANALYSIS - FULL FINAL APP.PY
+# =====================================================
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -86,9 +90,9 @@ def load_data():
         lambda x: int(x.split("-")[0])
     )
 
-    # =====================================================
+    # ==========================================
     # CONVERT FUNCTIONS
-    # =====================================================
+    # ==========================================
 
     def convert(obj):
 
@@ -159,7 +163,7 @@ def load_data():
 movies = load_data()
 
 # =====================================================
-# ALL GENRES
+# GENRES
 # =====================================================
 
 all_genres = sorted(
@@ -179,67 +183,76 @@ all_genres = sorted(
 st.markdown("""
 <style>
 
-html, body, [class*="css"] {
-    background-color: #050816;
-    color: white;
-    font-family: sans-serif;
+html, body, [class*="css"]{
+    background:#050816;
+    color:white;
+    font-family:sans-serif;
 }
 
 /* SIDEBAR */
 
-section[data-testid="stSidebar"] {
-    background-color: #0f0f0f;
+section[data-testid="stSidebar"]{
+    background:#0d0d0d;
 }
 
-.sidebar-title {
-    font-size:32px;
+.sidebar-title{
+    font-size:34px;
     font-weight:900;
     color:#E50914;
-    margin-bottom:20px;
+    margin-bottom:25px;
 }
 
 /* NAVBAR */
 
-.navbar {
+.navbar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     background:#0f0f0f;
-    padding:22px;
+    padding:24px;
     border-radius:22px;
     margin-bottom:30px;
 }
 
-.logo-title {
+.logo-title{
     font-size:42px;
     font-weight:900;
     color:#E50914;
 }
 
-.logo-sub {
+.logo-sub{
     color:#aaaaaa;
     margin-top:5px;
 }
 
-.stats {
+.stats{
     display:flex;
-    gap:16px;
+    gap:15px;
 }
 
-.stat-box {
-    background:#161616;
-    padding:16px 24px;
+.stat-box{
+    background:#181818;
+    padding:16px 22px;
     border-radius:16px;
     text-align:center;
 }
 
-.stat-number {
+.stat-number{
     font-size:28px;
     font-weight:bold;
 }
 
-.stat-label {
-    color:#999999;
+.stat-label{
+    color:#aaaaaa;
+}
+
+/* FILTERS */
+
+.filter-box{
+    background:#0f0f0f;
+    padding:22px;
+    border-radius:24px;
+    margin-bottom:25px;
 }
 
 /* HERO */
@@ -251,6 +264,7 @@ section[data-testid="stSidebar"] {
     overflow:hidden;
     background-size:cover;
     background-position:center;
+    margin-top:20px;
     margin-bottom:40px;
 }
 
@@ -259,16 +273,16 @@ section[data-testid="stSidebar"] {
     inset:0;
     background:linear-gradient(
         to right,
-        rgba(0,0,0,0.96),
-        rgba(0,0,0,0.25)
+        rgba(0,0,0,0.95),
+        rgba(0,0,0,0.2)
     );
 }
 
 .hero-content{
     position:absolute;
-    bottom:60px;
     left:60px;
-    width:40%;
+    bottom:60px;
+    width:45%;
     z-index:2;
 }
 
@@ -280,8 +294,8 @@ section[data-testid="stSidebar"] {
 
 .hero-rating{
     font-size:30px;
-    font-weight:bold;
     color:#E50914;
+    font-weight:bold;
     margin-top:20px;
 }
 
@@ -292,13 +306,12 @@ section[data-testid="stSidebar"] {
     line-height:1.7;
 }
 
-/* SECTION */
+/* SECTION TITLE */
 
 .section-title{
     font-size:34px;
     font-weight:800;
-    margin-top:20px;
-    margin-bottom:20px;
+    margin-bottom:25px;
 }
 
 /* MOVIE CARD */
@@ -324,26 +337,22 @@ section[data-testid="stSidebar"] {
 .movie-info{
     color:#d0d0d0;
     font-size:14px;
-    margin-top:4px;
+    margin-top:5px;
 }
 
 /* BUTTON */
 
 .stButton > button{
-
     width:100%;
     height:58px;
-
     background:linear-gradient(
         90deg,
         #E50914,
         #ff4d4d
     );
-
     color:white;
     border:none;
     border-radius:16px;
-
     font-size:18px;
     font-weight:bold;
 }
@@ -391,6 +400,7 @@ st.markdown(f"""
 <div class="navbar">
 
 <div>
+
 <div class="logo-title">
 OTT Trend Analysis
 </div>
@@ -398,6 +408,7 @@ OTT Trend Analysis
 <div class="logo-sub">
 Created by Harsh Patel
 </div>
+
 </div>
 
 <div class="stats">
@@ -423,9 +434,12 @@ Created by Harsh Patel
 
 if page == "🎯 Prediction":
 
-    # FILTERS
+    st.markdown(
+        "<div class='filter-box'>",
+        unsafe_allow_html=True
+    )
 
-    col1, col2, col3, col4 = st.columns([2.8,1,1,1.4])
+    col1, col2, col3, col4 = st.columns([2.5,1,1,1.2])
 
     with col1:
 
@@ -458,92 +472,104 @@ if page == "🎯 Prediction":
 
         search = st.text_input(
             "🔍 Search",
-            placeholder="Search movie..."
+            placeholder="Search movie"
         )
 
     discover = st.button("🚀 Discover Movies")
 
-    # DEFAULT MOVIE
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    default_movie = movies.sort_values(
-        by='vote_average',
-        ascending=False
-    ).iloc[0]
+    # =====================================================
+    # DEFAULT
+    # =====================================================
 
-    # FILTERING
+    filtered = movies.copy()
 
-    if discover and selected_genres:
+    # =====================================================
+    # GENRE FILTER
+    # =====================================================
 
-        filtered = movies[
-            (
-                movies['genres'].astype(str).str.contains(
-                    selected_genres[0],
-                    case=False
-                )
-            )
-            &
-            (
-                abs(movies['year'] - year) <= 5
-            )
-            &
-            (
-                movies['vote_average'] >= min_rating
-            )
-        ].copy()
+    if len(selected_genres) > 0:
 
-        if search:
+        for genre in selected_genres:
 
             filtered = filtered[
-                filtered['title'].str.contains(
-                    search,
-                    case=False,
-                    na=False
+                filtered['genres'].astype(str).str.contains(
+                    genre,
+                    case=False
                 )
             ]
 
-        if len(filtered) > 0:
+    # =====================================================
+    # YEAR FILTER
+    # =====================================================
 
-            vectors_filtered = cv.transform(
-                filtered['tags']
-            ).toarray()
+    filtered = filtered[
+        abs(filtered['year'] - year) <= 5
+    ]
 
-            years_filtered = filtered['year'].values.reshape(-1,1)
+    # =====================================================
+    # RATING FILTER
+    # =====================================================
 
-            X_filtered = np.concatenate(
-                (vectors_filtered, years_filtered),
-                axis=1
+    filtered = filtered[
+        filtered['vote_average'] >= min_rating
+    ]
+
+    # =====================================================
+    # SEARCH FILTER
+    # =====================================================
+
+    if search:
+
+        filtered = filtered[
+            filtered['title'].str.contains(
+                search,
+                case=False,
+                na=False
             )
+        ]
 
-            filtered['predicted_rating'] = model.predict(
-                X_filtered
-            )
+    # =====================================================
+    # IF NOTHING FOUND
+    # =====================================================
 
-            top_movies = filtered.sort_values(
-                by='predicted_rating',
-                ascending=False
-            ).head(10)
+    if len(filtered) == 0:
 
-            hero_movie = top_movies.iloc[0]
-
-        else:
-
-            top_movies = movies.sort_values(
-                by='vote_average',
-                ascending=False
-            ).head(10)
-
-            hero_movie = default_movie
-
-    else:
-
-        top_movies = movies.sort_values(
+        filtered = movies.sort_values(
             by='vote_average',
             ascending=False
         ).head(10)
 
-        hero_movie = default_movie
+    # =====================================================
+    # PREDICT
+    # =====================================================
 
-    # HERO SECTION
+    vectors_filtered = cv.transform(
+        filtered['tags']
+    ).toarray()
+
+    years_filtered = filtered['year'].values.reshape(-1,1)
+
+    X_filtered = np.concatenate(
+        (vectors_filtered, years_filtered),
+        axis=1
+    )
+
+    filtered['predicted_rating'] = model.predict(
+        X_filtered
+    )
+
+    top_movies = filtered.sort_values(
+        by='predicted_rating',
+        ascending=False
+    ).head(10)
+
+    # =====================================================
+    # HERO MOVIE
+    # =====================================================
+
+    hero_movie = top_movies.iloc[0]
 
     hero_poster = fetch_poster(hero_movie['title'])
 
@@ -553,8 +579,8 @@ if page == "🎯 Prediction":
     background-image:
     linear-gradient(
         to right,
-        rgba(0,0,0,0.96),
-        rgba(0,0,0,0.25)
+        rgba(0,0,0,0.95),
+        rgba(0,0,0,0.2)
     ),
     url('{hero_poster}');
     ">
@@ -580,10 +606,12 @@ if page == "🎯 Prediction":
     </div>
     """, unsafe_allow_html=True)
 
+    # =====================================================
     # MOVIES
+    # =====================================================
 
     st.markdown(
-        "<div class='section-title'>🔥 Trending & Recommended Movies</div>",
+        "<div class='section-title'>🔥 Recommended Movies</div>",
         unsafe_allow_html=True
     )
 
@@ -651,13 +679,13 @@ elif page == "🎬 All Movies":
         unsafe_allow_html=True
     )
 
-    # KPI
+    # KPIs
 
     k1, k2, k3, k4 = st.columns(4)
 
     with k1:
         st.metric(
-            "🎬 Total Movies",
+            "🎬 Movies",
             len(movies)
         )
 
@@ -681,7 +709,9 @@ elif page == "🎬 All Movies":
 
     st.divider()
 
+    # =====================================================
     # GRAPH 1
+    # =====================================================
 
     lang_df = (
         movies['original_language']
@@ -704,7 +734,9 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
+    # =====================================================
     # GRAPH 2
+    # =====================================================
 
     year_df = (
         movies['year']
@@ -727,7 +759,9 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
+    # =====================================================
     # GRAPH 3
+    # =====================================================
 
     fig3 = px.histogram(
         movies,
@@ -741,7 +775,9 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
+    # =====================================================
     # GRAPH 4
+    # =====================================================
 
     fig4 = px.scatter(
         movies,
@@ -756,7 +792,9 @@ elif page == "🎬 All Movies":
         use_container_width=True
     )
 
-    # TABLE
+    # =====================================================
+    # DATA TABLE
+    # =====================================================
 
     st.markdown(
         "<div class='section-title'>📊 Complete Dataset</div>",

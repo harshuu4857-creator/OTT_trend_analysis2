@@ -564,6 +564,11 @@ if page == "Prediction":
                 )
 
                 st.markdown(
+                    f"<div class='movie-info'>🎯 {row['movie_status']}</div>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
                     f"<div class='movie-info'>🌍 {row['original_language']}</div>",
                     unsafe_allow_html=True
                 )

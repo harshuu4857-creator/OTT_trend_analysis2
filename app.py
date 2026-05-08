@@ -562,7 +562,7 @@ if page == "Prediction":
                     f"<div class='movie-info'>⭐ {round(row['vote_average'],1)}</div>",
                     unsafe_allow_html=True
                 )
-
+                
                 st.markdown(
                     f"<div class='movie-info'>🎯 {row['movie_status']}</div>",
                     unsafe_allow_html=True

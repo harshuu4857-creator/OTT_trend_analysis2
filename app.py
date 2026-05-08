@@ -65,6 +65,14 @@ movies['year'] = movies['release_date'].apply(
 )
 
 # =====================================================
+# MOVIE STATUS
+# =====================================================
+
+movies['movie_status'] = movies['vote_average'].apply(
+    lambda x: "🔥 Hit" if x >= 7 else "❌ Flop"
+)
+
+# =====================================================
 # GENRE CONVERT
 # =====================================================
 
@@ -258,6 +266,7 @@ if page == "All Movies":
             [
                 'title',
                 'vote_average',
+                'movie_status',
                 'popularity',
                 'original_language',
                 'budget',
@@ -301,10 +310,6 @@ if page == "All Movies":
 
     st.markdown("---")
 
-    # =================================================
-    # GRAPH 1
-    # =================================================
-
     st.subheader("⭐ Average Rating Trend")
 
     rating_trend = movies.groupby(
@@ -323,33 +328,11 @@ if page == "All Movies":
 
     st.pyplot(fig)
 
-    # =================================================
-    # GRAPH 2
-    # =================================================
-
-    st.subheader("💰 Budget vs Popularity")
-
-    fig2, ax2 = plt.subplots(figsize=(10,4))
-
-    ax2.scatter(
-        movies['budget'],
-        movies['popularity']
-    )
-
-    ax2.set_xlabel("Budget")
-    ax2.set_ylabel("Popularity")
-
-    st.pyplot(fig2)
-
 # =====================================================
 # PREDICTION PAGE
 # =====================================================
 
 if page == "Prediction":
-
-    # =================================================
-    # HEADER
-    # =================================================
 
     col1, col2, col3 = st.columns([6,1,1])
 
@@ -399,10 +382,6 @@ if page == "Prediction":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # =================================================
-    # FILTERS
-    # =================================================
-
     c1, c2, c3, c4 = st.columns([3,1,1,2])
 
     all_genres = sorted(
@@ -448,17 +427,9 @@ if page == "Prediction":
 
     show = st.button("🚀 Discover Movies")
 
-    # =================================================
-    # PREDICT
-    # =================================================
-
     if show:
 
         filtered = movies.copy()
-
-        # =============================================
-        # GENRE FILTER
-        # =============================================
 
         if selected_genres:
 
@@ -471,25 +442,13 @@ if page == "Prediction":
                     )
                 ]
 
-        # =============================================
-        # YEAR FILTER
-        # =============================================
-
         filtered = filtered[
             abs(filtered['year'] - year) <= 5
         ]
 
-        # =============================================
-        # RATING FILTER
-        # =============================================
-
         filtered = filtered[
             filtered['vote_average'] >= rating
         ]
-
-        # =============================================
-        # SEARCH FILTER
-        # =============================================
 
         if search:
 
@@ -499,10 +458,6 @@ if page == "Prediction":
                     case=False
                 )
             ]
-
-        # =============================================
-        # PREDICTION
-        # =============================================
 
         genre_vec_all = cv.transform(
             filtered['genres_text']
@@ -526,10 +481,6 @@ if page == "Prediction":
             by='predicted_rating',
             ascending=False
         ).head(8)
-
-        # =============================================
-        # RESULTS
-        # =============================================
 
         st.markdown("---")
 
@@ -562,7 +513,7 @@ if page == "Prediction":
                     f"<div class='movie-info'>⭐ {round(row['vote_average'],1)}</div>",
                     unsafe_allow_html=True
                 )
-                
+
                 st.markdown(
                     f"<div class='movie-info'>🎯 {row['movie_status']}</div>",
                     unsafe_allow_html=True
